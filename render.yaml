@@ -1,0 +1,62 @@
+# render.yaml — Full-Stack-Deployment WM 2026 Prognose-System (Blueprint / IaC)
+#
+#   - wm2026-backend   : FastAPI (Docker), 1 persistente Instanz, 1 Worker
+#   - wm2026-frontend  : Next.js (Node, standalone build)
+#   - wm2026-db        : Managed PostgreSQL (Backups)
+#   - Redis            : OPTIONAL (weggelassen -> graceful Fallback)
+#
+# WICHTIG (In-Memory-State + 50s-numpy-Sim als BackgroundTask):
+#   numInstances MUSS 1 bleiben, KEIN gunicorn -w >1, KEIN Autoscaling.
+
+databases:
+  - name: wm2026-db
+    plan: basic-256mb
+    postgresMajorVersion: "15"
+
+services:
+  - type: web
+    name: wm2026-backend
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    plan: standard                   # >=1 vCPU / 2GB für die numpy-Simulation
+    numInstances: 1                  # <<< PFLICHT: genau 1 Instanz (In-Memory-State)
+    healthCheckPath: /api/v1/health
+    autoDeploy: true
+    envVars:
+      # DB: ZWEI Treiber-URLs aus der Render-"Internal Database URL" ableiten:
+      #   DATABASE_URL       = postgresql+asyncpg://USER:PASS@HOST:5432/DB
+      #   DATABASE_URL_SYNC  = postgresql+psycopg2://USER:PASS@HOST:5432/DB
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_URL_SYNC
+        sync: false
+      - key: REDIS_URL
+        sync: false               # leer = ohne Cache (graceful)
+      - key: ODDS_API_KEY
+        sync: false
+      - key: RAPIDAPI_KEY
+        sync: false
+      - key: ADMIN_TOKEN
+        generateValue: true
+      - key: CORS_ORIGINS
+        sync: false               # z.B. https://wm2026-frontend.onrender.com
+      - key: ENV
+        value: production
+      - key: MONTE_CARLO_RUNS
+        value: "100000"
+
+  - type: web
+    name: wm2026-frontend
+    runtime: node
+    rootDir: frontend
+    plan: starter
+    numInstances: 1
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    autoDeploy: true
+    envVars:
+      - key: NEXT_PUBLIC_API_URL   # BUILD-ZEIT! z.B. https://wm2026-backend.onrender.com
+        sync: false
+      - key: NODE_VERSION
+        value: "20"

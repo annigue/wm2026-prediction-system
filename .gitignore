@@ -1,0 +1,31 @@
+# ─── Python ───────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+backend/venv/
+*.egg-info/
+.pytest_cache/
+
+# ─── Secrets ──────────────────────────────────────────────
+.env
+backend/.env
+frontend/.env
+frontend/.env.local
+
+# ─── Node / Next.js ───────────────────────────────────────
+node_modules/
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+
+# ─── Eval-Artefakte (generiert) ───────────────────────────
+backend/scripts/eval/results.json
+
+# ─── OS / Editor ──────────────────────────────────────────
+.DS_Store
+*.swp
+.~lock.*
+
+# NICHT ignoriert (bewusst committed):
+#   backend/data/eloratings_2026-06-06.txt   (reproduzierbare Elo-Quelle)
+#   backend/data/initial_elo.json            (klein, reproduzierbar)
+#   render.yaml, Dockerfiles, *.env.example, docs/
