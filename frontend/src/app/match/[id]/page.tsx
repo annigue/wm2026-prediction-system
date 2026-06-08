@@ -2,7 +2,6 @@ import { api } from "@/lib/api";
 import { ProbabilityBar } from "@/components/ui/ProbabilityBar";
 import { ScoreHeatmap } from "@/components/ui/ScoreHeatmap";
 import { FactorExplanation } from "@/components/ui/FactorExplanation";
-import { ResultFormWrapper } from "@/components/ResultFormWrapper";
 import { BettingPanel } from "@/components/BettingPanel";
 import { TipPanel } from "@/components/TipPanel";
 import { computeTips, outcomeColor, outcomeBg, evaluateTip, evalColor } from "@/lib/tips";
@@ -81,15 +80,9 @@ export default async function MatchPage({ params }: { params: { id: string } }) 
               ) : (
                 <span className="badge-yellow">Geplant</span>
               )}
-              {/* Ergebnis-Eingabe (nur für geplante/laufende Spiele mit bekannten Teams) */}
+              {/* Ergebnisse werden automatisch synchronisiert (kein manuelles Eintragen) */}
               {match.status !== "FINISHED" && match.home_team && match.away_team && (
-                <ResultFormWrapper
-                  matchId={match.id}
-                  homeName={match.home_team.name ?? "Heim"}
-                  awayName={match.away_team.name ?? "Auswärts"}
-                  homeFlag={match.home_team.flag_emoji ?? "🏳️"}
-                  awayFlag={match.away_team.flag_emoji ?? "🏳️"}
-                />
+                <p className="text-[11px] text-wm-muted">Ergebnis wird automatisch übernommen.</p>
               )}
             </div>
           </div>
