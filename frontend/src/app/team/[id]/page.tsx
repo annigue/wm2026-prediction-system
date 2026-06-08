@@ -38,6 +38,16 @@ function StageRow({ label, prob, highlight }: { label: string; prob: number | un
 
 export const revalidate = 60;
 
+// Alle Team-Seiten beim Build vorrendern → erster Besuch sofort.
+export async function generateStaticParams() {
+  try {
+    const teams = await api.teams();
+    return teams.map((t) => ({ id: t.id }));
+  } catch {
+    return [];
+  }
+}
+
 export default async function TeamPage({ params }: { params: { id: string } }) {
   let team: TeamDetail | null = null;
   let simProbs: TournamentProbs | null = null;

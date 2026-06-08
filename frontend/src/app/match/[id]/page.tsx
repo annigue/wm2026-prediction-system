@@ -18,6 +18,16 @@ function fmt(iso?: string) {
 
 export const revalidate = 60;
 
+// Alle Spiele mit bekannten Teams beim Build vorrendern → erster Besuch sofort.
+export async function generateStaticParams() {
+  try {
+    const matches = await api.matches();
+    return matches.filter((m) => m.home_team && m.away_team).map((m) => ({ id: m.id }));
+  } catch {
+    return [];
+  }
+}
+
 export default async function MatchPage({ params }: { params: { id: string } }) {
   let match: any = null;
   try {
