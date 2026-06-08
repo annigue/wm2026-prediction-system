@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, noload
 
 from app.database import get_db
 from app.models.team import Team
@@ -38,7 +38,8 @@ def _team_to_summary(team: Team, champion_prob=None) -> TeamSummary | None:
 async def list_teams(db: AsyncSession = Depends(get_db)):
     sim = await _latest_sim(db)
     champ = sim.champion_probs if sim else {}
-    q = await db.execute(select(Team).options(selectinload(Team.features)))
+    q = await db.execute(select(Team).options(
+        selectinload(Team.features), noload(Team.elo_history), noload(Team.groups)))
     teams = q.scalars().all()
     out = [_team_to_summary(t, champ.get(t.id)) for t in teams]
     out.sort(key=lambda s: (s.champion_probability or 0, s.elo_rating or 0), reverse=True)

@@ -46,24 +46,32 @@ async def champion_probabilities(db: AsyncSession = Depends(get_db)):
     return {"champion_probabilities": (sim.champion_probs if sim else {}) or {}}
 
 
+# In-Process-Cache für die (deterministische, teure) Projektion. Single-Instance-Backend
+# → prozessweiter Cache ist ausreichend; Redis ist im Free-Stack nicht aktiv.
+import time as _time
+_proj_cache: dict = {"ts": 0.0, "data": None}
+_PROJ_TTL = 60.0
+
+
 @router.get("/projection")
 async def projection(db: AsyncSession = Depends(get_db)):
-    import os
+    now = _time.time()
+    if _proj_cache["data"] is not None and (now - _proj_cache["ts"]) < _PROJ_TTL:
+        return _proj_cache["data"]
+
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
     from app.config import settings
     from app.services.tournament_projection import build_projection
-    from app.services.cache import cached
 
-    def _produce():
-        engine = create_engine(settings.database_url_sync)
-        Session = sessionmaker(bind=engine)
-        with Session() as s:
-            proj = build_projection(s)
-        engine.dispose()
-        return proj
+    engine = create_engine(settings.database_url_sync)
+    Session = sessionmaker(bind=engine)
+    with Session() as s:
+        proj = build_projection(s)
+    engine.dispose()
 
-    return cached("wm2026:projection", 1800, _produce)
+    _proj_cache.update(ts=now, data=proj)
+    return proj
 
 
 @router.get("/bets")

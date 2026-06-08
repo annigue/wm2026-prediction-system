@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc, func
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, noload
 
 from app.database import get_db
 from app.models.match import Match
@@ -42,14 +42,15 @@ async def dashboard(db: AsyncSession = Depends(get_db)):
         select(TournamentSimulation).order_by(desc(TournamentSimulation.simulated_at)).limit(1)
     )).scalar_one_or_none()
 
-    teams = {t.id: t for t in (await db.execute(select(Team))).scalars().all()}
+    teams = {t.id: t for t in (await db.execute(select(Team).options(
+        noload(Team.features), noload(Team.elo_history), noload(Team.groups)))).scalars().all()}
     top_favorites = []
     if sim and sim.champion_probs:
         ranked = sorted(sim.champion_probs.items(), key=lambda kv: kv[1], reverse=True)[:10]
     else:
         # Fallback ohne Simulation: nach Elo
-        feats = (await db.execute(
-            select(Team).options(selectinload(Team.features)))).scalars().all()
+        feats = (await db.execute(select(Team).options(
+            selectinload(Team.features), noload(Team.elo_history), noload(Team.groups)))).scalars().all()
         ranked = sorted(
             [(t.id, (t.features[0].elo_rating if t.features else 1500)) for t in feats],
             key=lambda kv: kv[1], reverse=True)[:10]

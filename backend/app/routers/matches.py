@@ -2,11 +2,13 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Header, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, load_only, noload
 
 from app.database import get_db
 from app.config import settings
 from app.models.match import Match, MatchResult
+from app.models.team import Team
+from app.models.prediction import MatchPrediction
 from app.schemas.match import (
     MatchSummary, MatchDetail, PredictionSummary, PredictionDetail, ResultOut, ResultCreate,
     VenueOut,
@@ -55,9 +57,28 @@ def _build_match_summary(match) -> MatchSummary:
     )
 
 
-_SUMMARY_OPTS = [
-    selectinload(Match.home_team), selectinload(Match.away_team),
-    selectinload(Match.predictions), selectinload(Match.result),
+# Team mit Features laden, aber elo_history + groups unterdrücken (in Listen/Summaries
+# nicht gebraucht; spart pro Team das Laden der gesamten Elo-Historie + Memberships).
+def _team_trim(rel):
+    return selectinload(rel).options(noload(Team.elo_history), noload(Team.groups))
+
+# Liste: nur die Summary-Spalten der Prognose (kein score_distribution/explanation/snapshots).
+_PRED_SUMMARY_COLS = (
+    MatchPrediction.prob_home_win, MatchPrediction.prob_draw, MatchPrediction.prob_away_win,
+    MatchPrediction.xg_home, MatchPrediction.xg_away, MatchPrediction.top_scorelines,
+    MatchPrediction.model_version, MatchPrediction.predicted_at,
+)
+
+_LIST_OPTS = [
+    _team_trim(Match.home_team), _team_trim(Match.away_team),
+    selectinload(Match.predictions).load_only(*_PRED_SUMMARY_COLS),
+    selectinload(Match.result),
+]
+
+# Detail: volle Prognose (score_distribution für Heatmap, explanation für Faktoren) + Venue.
+_DETAIL_OPTS = [
+    _team_trim(Match.home_team), _team_trim(Match.away_team),
+    selectinload(Match.predictions), selectinload(Match.result), selectinload(Match.venue),
 ]
 
 
@@ -67,7 +88,7 @@ async def list_matches(
     team_id: Optional[str] = Query(None), status: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
 ):
-    stmt = select(Match).options(*_SUMMARY_OPTS).order_by(Match.kickoff_utc)
+    stmt = select(Match).options(*_LIST_OPTS).order_by(Match.kickoff_utc)
     if stage:
         stmt = stmt.where(Match.stage == stage)
     if group_id:
@@ -83,7 +104,7 @@ async def list_matches(
 @router.get("/{match_id}", response_model=MatchDetail)
 async def get_match(match_id: str, db: AsyncSession = Depends(get_db)):
     q = await db.execute(
-        select(Match).options(*_SUMMARY_OPTS, selectinload(Match.venue)).where(Match.id == match_id)
+        select(Match).options(*_DETAIL_OPTS).where(Match.id == match_id)
     )
     match = q.scalar_one_or_none()
     if not match:

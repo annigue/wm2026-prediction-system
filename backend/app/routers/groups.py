@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc, text
+from sqlalchemy.orm import noload
 
 from app.database import get_db
 from app.models.team import Group, Team
@@ -24,7 +25,8 @@ async def list_groups(db: AsyncSession = Depends(get_db)):
     for gid, tid in grp_rows:
         members.setdefault(gid, []).append(tid)
 
-    teams = {t.id: t for t in (await db.execute(select(Team))).scalars().all()}
+    teams = {t.id: t for t in (await db.execute(select(Team).options(
+        noload(Team.features), noload(Team.elo_history), noload(Team.groups)))).scalars().all()}
 
     # Tabellen aus realen Ergebnissen
     res_rows = (await db.execute(text("""
