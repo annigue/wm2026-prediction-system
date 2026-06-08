@@ -23,6 +23,8 @@ function ProbBar({ prob, color = "bg-wm-gold" }: { prob: number; color?: string 
   );
 }
 
+export const revalidate = 60;
+
 export default async function DashboardPage() {
   let data: DashboardData | null = null;
   let sim: SimulationResult | null = null;

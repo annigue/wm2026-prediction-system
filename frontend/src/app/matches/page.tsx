@@ -42,6 +42,8 @@ function groupMatches(matches: MatchSummary[]) {
   return { byGroup, ko };
 }
 
+export const revalidate = 60;
+
 export default async function MatchesPage() {
   let matches: MatchSummary[] = [];
   try {

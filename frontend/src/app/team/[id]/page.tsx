@@ -36,6 +36,8 @@ function StageRow({ label, prob, highlight }: { label: string; prob: number | un
   );
 }
 
+export const revalidate = 60;
+
 export default async function TeamPage({ params }: { params: { id: string } }) {
   let team: TeamDetail | null = null;
   let simProbs: TournamentProbs | null = null;

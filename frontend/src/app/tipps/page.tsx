@@ -23,6 +23,8 @@ function byDate(matches: MatchSummary[]): Record<string, MatchSummary[]> {
   return result;
 }
 
+export const revalidate = 60;
+
 export default async function TippsPage() {
   let matches: MatchSummary[] = [];
   try {

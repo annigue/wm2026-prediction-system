@@ -7,6 +7,8 @@ function pct(n: number | null | undefined) {
   return `${(n * 100).toFixed(0)}%`;
 }
 
+export const revalidate = 60;
+
 export default async function GroupsPage() {
   let groups: Group[] = [];
   let sim: SimulationResult | null = null;

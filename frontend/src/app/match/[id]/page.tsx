@@ -16,6 +16,8 @@ function fmt(iso?: string) {
   }) + " Uhr";
 }
 
+export const revalidate = 60;
+
 export default async function MatchPage({ params }: { params: { id: string } }) {
   let match: any = null;
   try {

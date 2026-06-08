@@ -17,6 +17,8 @@ function StageBar({ value }: { value: number }) {
   );
 }
 
+export const revalidate = 60;
+
 export default async function BracketPage() {
   let sim = null;
   let teams: any[] = [];
