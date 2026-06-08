@@ -14,6 +14,7 @@ services:
     rootDir: backend
     dockerfilePath: ./Dockerfile
     plan: free
+    region: frankfurt          # co-located mit Neon (eu-central) — vermeidet Atlantik-Latenz pro DB-Query
     healthCheckPath: /api/v1/health
     autoDeploy: true
     envVars:

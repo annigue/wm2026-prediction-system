@@ -6,8 +6,13 @@ import type {
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const API = `${BASE}/api/v1`;
 
+// ISR-Caching (Performance): Daten ändern sich nur bei Ergebnis-Eingabe (während der WM
+// ein paar Mal/Tag). Vercel cached die SSR-Seiten und liefert sie nahezu instant aus
+// (stale-while-revalidate), statt jede Navigation gegen das langsame Free-Backend zu schicken.
+const REVALIDATE = 60; // Sekunden
+
 async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`${API}${path}`, { cache: "no-store" });
+  const res = await fetch(`${API}${path}`, { next: { revalidate: REVALIDATE } });
   if (!res.ok) throw new Error(`API ${path} → ${res.status}`);
   return res.json() as Promise<T>;
 }
