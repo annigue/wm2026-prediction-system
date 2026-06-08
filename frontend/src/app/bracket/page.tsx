@@ -45,15 +45,15 @@ export default async function BracketPage() {
         <h1 className="text-2xl font-bold text-white">Turnierbaum & Titelchancen</h1>
         {sim ? (
           <p className="text-wm-muted text-sm mt-1">
-            {sim.n_runs?.toLocaleString("de-DE")} Monte-Carlo-Simulationen ·
-            Modell {sim.model_version} ·{" "}
+            {sim.n_runs?.toLocaleString("de-DE")} Monte-Carlo-Simulationen · Modell {sim.model_version} ·{" "}
+            🎲 Stand:{" "}
             {new Date(sim.simulated_at).toLocaleString("de-DE", {
-              day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
-            })}
+              day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
+            })} Uhr
           </p>
         ) : (
           <p className="text-wm-muted text-sm mt-1">
-            Noch keine Simulation. Klick auf "🎲 Simulieren" in der Navigationsleiste.
+            Noch keine Simulation — wird nach dem ersten Spielergebnis automatisch berechnet.
           </p>
         )}
       </div>

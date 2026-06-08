@@ -107,7 +107,7 @@ export default async function DashboardPage() {
           <div className="space-y-1.5">
             {favorites.length === 0 ? (
               <div className="card text-wm-muted text-sm">
-                Noch keine Simulation. "🎲 Simulieren" klicken.
+                Noch keine Simulation — wird nach dem ersten Spielergebnis automatisch berechnet.
               </div>
             ) : (
               favorites.map(([teamId, prob], i) => {
@@ -129,8 +129,14 @@ export default async function DashboardPage() {
           </div>
           {sim && (
             <p className="text-xs text-wm-muted">
-              Basis: {sim.n_runs?.toLocaleString("de-DE")} Simulationen ·{" "}
-              {new Date(sim.simulated_at).toLocaleDateString("de-DE")}
+              🎲 Simulation zuletzt aktualisiert:{" "}
+              <span className="text-gray-300">
+                {new Date(sim.simulated_at).toLocaleString("de-DE", {
+                  day: "2-digit", month: "2-digit", year: "numeric",
+                  hour: "2-digit", minute: "2-digit",
+                })} Uhr
+              </span>{" "}
+              · {sim.n_runs?.toLocaleString("de-DE")} Läufe · neu nach jedem Spielergebnis
             </p>
           )}
         </section>
