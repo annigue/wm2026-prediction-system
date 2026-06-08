@@ -5,6 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings, HOST_NATIONS
 from app.models.team import Team, TeamFeature
 from app.models.match import Match, Venue, MatchResult
 from app.models.prediction import MatchPrediction
@@ -15,6 +16,17 @@ from app.services.feature_adjuster import FeatureAdjuster
 _elo      = EloModel()
 _poisson  = PoissonModel()
 _adjuster = FeatureAdjuster()
+
+
+def _host_bonus(stage, home_team_id, away_team_id) -> tuple[float, float]:
+    """Gastgeber-Heimvorteil als gerichteter Elo-Bonus — NUR in der Gruppenphase
+    (Gastgeber spielen dort im eigenen Land; KO-Austragungsort ist unklar → neutral).
+    Bei Gastgeber-gegen-Gastgeber heben sich die Boni auf (beide +Bonus)."""
+    if stage != "GROUP_STAGE":
+        return 0.0, 0.0
+    b = settings.host_advantage_elo
+    return (b if home_team_id in HOST_NATIONS else 0.0,
+            b if away_team_id in HOST_NATIONS else 0.0)
 
 
 async def _rest_days(team_id: str, kickoff, db: AsyncSession) -> float | None:
@@ -83,7 +95,30 @@ async def predict_match(match_id: str, db: AsyncSession, model_version: str = "v
 
     adj = _adjuster.adjust(home, away, home_feat, away_feat, venue,
                            rest_home=rest_home, rest_away=rest_away)
-    result = _poisson.predict(adj.adjusted_home_elo, adj.adjusted_away_elo)
+
+    # Gastgeber-Heimvorteil (gerichtet, nur Gruppenphase) ON TOP der Feature-Adjustierung
+    host_home, host_away = _host_bonus(match.stage, match.home_team_id, match.away_team_id)
+    eff_home_elo = adj.adjusted_home_elo + host_home
+    eff_away_elo = adj.adjusted_away_elo + host_away
+    result = _poisson.predict(eff_home_elo, eff_away_elo)
+
+    factors = [
+        {
+            "name": f.name, "value": f.description, "elo_delta": f.elo_delta,
+            "weight": f.weight,
+            "direction": "home" if f.elo_delta > 0 else ("away" if f.elo_delta < 0 else "neutral"),
+        }
+        for f in adj.factors
+    ]
+    if host_home or host_away:
+        net = host_home - host_away
+        host_name = (home.name if host_home else away.name)
+        factors.append({
+            "name": "Gastgeber-Heimvorteil",
+            "value": f"{host_name}: +{settings.host_advantage_elo:.0f} Elo (Gruppenphase im eigenen Land)",
+            "elo_delta": round(net, 1), "weight": 1.0,
+            "direction": "home" if net > 0 else "away",
+        })
 
     explanation = {
         "summary":     adj.summary,
@@ -91,16 +126,9 @@ async def predict_match(match_id: str, db: AsyncSession, model_version: str = "v
         "elo_away":    away_elo,
         "elo_delta":   round(home_elo - away_elo, 1),
         "feature_delta": adj.total_delta,
-        "adjusted_elo_home": adj.adjusted_home_elo,
-        "adjusted_elo_away": adj.adjusted_away_elo,
-        "factors": [
-            {
-                "name": f.name, "value": f.description, "elo_delta": f.elo_delta,
-                "weight": f.weight,
-                "direction": "home" if f.elo_delta > 0 else ("away" if f.elo_delta < 0 else "neutral"),
-            }
-            for f in adj.factors
-        ],
+        "adjusted_elo_home": round(eff_home_elo, 1),
+        "adjusted_elo_away": round(eff_away_elo, 1),
+        "factors": factors,
     }
 
     existing = next((p for p in match.predictions if p.model_version == model_version), None)

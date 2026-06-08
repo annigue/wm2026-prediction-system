@@ -13,6 +13,13 @@ class Settings(BaseSettings):
     elo_k_factor: float = 32.0
     elo_k_factor_tournament: float = 20.0
 
+    # ── Gastgeber-Heimvorteil (WM 2026: USA/Kanada/Mexiko) ────────────────────
+    # Gerichteter Elo-Bonus, NUR wenn ein Gastgeber in der Gruppenphase spielt
+    # (dort strukturell im eigenen Land). Bildet Publikum + Vertrautheit ab
+    # (Reise/Höhe sind separat im feature_adjuster → kein Double-Counting).
+    # Konservativ + tunebar; KO-Phase bleibt neutral (Austragungsort dort unklar).
+    host_advantage_elo: float = 55.0
+
     football_data_api_key: str = ""
     football_data_base_url: str = "https://api.football-data.org/v4"
     rapidapi_key: str = ""
@@ -41,3 +48,6 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+# Gastgeber der WM 2026 (Team-IDs — robust gegen abweichende Länder-Strings).
+HOST_NATIONS = frozenset({"usa", "mexico", "canada"})

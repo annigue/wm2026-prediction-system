@@ -12,6 +12,7 @@ WM 2026 Monte Carlo Turniersimulation — mit Context Injection Layer.
 import random
 import numpy as np
 
+from app.config import settings, HOST_NATIONS
 from app.services.context_modifier import (
     compute_group_context_vectorized, compute_ko_context_scalar,
 )
@@ -51,7 +52,13 @@ class TournamentSimulator:
         for gid, team_ids in self.groups.items():
             k = len(team_ids)
             team_arr = np.array(team_ids, dtype=object)
-            elos = np.array([self.elos.get(t, 1500.0) for t in team_ids], dtype=np.float64)
+            # Gastgeber-Heimvorteil: Gruppenspiele werden im eigenen Land ausgetragen
+            # → Host-Team bekommt den Bonus in allen Gruppenspielen (konsistent zur Einzelprognose).
+            _hb = settings.host_advantage_elo
+            elos = np.array(
+                [self.elos.get(t, 1500.0) + (_hb if t in HOST_NATIONS else 0.0) for t in team_ids],
+                dtype=np.float64,
+            )
             pts = np.zeros((n_runs, k), dtype=np.int32)
             gf  = np.zeros((n_runs, k), dtype=np.int32)
             ga  = np.zeros((n_runs, k), dtype=np.int32)
