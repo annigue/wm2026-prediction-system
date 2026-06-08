@@ -50,8 +50,17 @@ ist in-memory pro Prozess → Single-Instance-Backend hält ihn warm).
 
 ## Tipping Engine (`tipping_engine.py`)
 Punktoptimaler Exakt-Tipp via **Erwartungswert-Maximierung** über die Score-Verteilung
-(nicht argmax). Kicktipp-Schema: exakt 4 / Tordifferenz 3 / Tendenz 2 / sonst 0. Frontend:
-`BettingPanel.tsx`, `TipPanel.tsx`.
+(nicht argmax). Kicktipp-Schema (`tipping_engine._points`): exakt 4 / Tordifferenz 3 (inkl.
+beide Remis) / Tendenz 2 / sonst 0. Frontend: `BettingPanel.tsx`, `TipPanel.tsx`.
+
+## Tipp-vs-Ergebnis-Auswertung (gespielte Spiele)
+Für beendete Spiele wird der **empfohlene Tipp** (xG-Tipp, konsistent zur Tipps-Seite) gegen das
+**tatsächliche Ergebnis** ausgewertet und die erzielten **Kicktipp-Punkte** angezeigt.
+- Frontend-Logik `lib/tips.ts → evaluateTip(tipScore, result)` → `{points, kind, label}` —
+  identische Punktelogik wie das Backend (Exakt 4 / Tordifferenz 3 / Tendenz 2 / 0).
+- Anzeige: **Tipps-Seite** Sektion „Bereits gespielt" (pro Spiel Tipp → Ergebnis + Punkte) inkl.
+  **Punkte-Bilanz** (Gesamtpunkte, exakt-Treffer, Trefferquote); **Match-Detail** als Vergleichskarte.
+- Reine Auswertung — keine Änderung am Prognose-/Tipping-Modell.
 
 ## Haftungsausschluss
 Statistisches Analyse-Tool, kein Wettangebot. Synthetische Quoten ≠ echte Buchmacher-Quoten.

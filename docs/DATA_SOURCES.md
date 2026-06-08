@@ -19,6 +19,10 @@
   legt nichts doppelt an. Namens-Mapping API→team_id wird aus der DB (`home_country`) gebaut
   + Aliase (z. B. „Bosnia & Herzegovina"→bosnia, „United States"→usa).
 - `/admin/status` macht **keinen** API-Call (nur letzter bekannter Rate-Limit-Stand).
+- **Automatisiert:** Der GitHub-Actions-Workflow `sync-results.yml` ruft alle 30 min
+  `POST /admin/auto-update` → `sync_all` + Elo (idempotent für neue Spiele) + Recompute.
+  Kein manuelles Eintragen nötig; `POST /matches/{id}/result` bleibt als Fallback.
+  Der 30-min-Takt schont das RapidAPI-Kontingent (Rate-Limits werden getrackt, Graceful Fallback).
 
 ## Initial-Elo — eloratings.net
 - Quelle committed: `backend/data/eloratings_2026-06-06.txt`. Import:

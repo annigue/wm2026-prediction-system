@@ -51,10 +51,32 @@ In-Memory-Odds-Cache + BG-Tasks ⇒ 1 Instanz/Worker. Sim als sync Task → Thre
 den Event-Loop nicht. Bewusst kein Autoscaling.
 
 ## ADR-013 — Free-Hosting-Stack (Vercel + Render-Free + Neon)
-Kosten 0 € für ein privates Tool. Trade-off Cold Start akzeptiert; `MONTE_CARLO_RUNS=30000`
-(verifiziert gleichwertig) spart Ressourcen. *Alternativen:* alles-Render-paid / Oracle-VPS — situativ.
+Kosten 0 € für ein privates Tool. *Alternativen:* alles-Render-paid / Oracle-VPS — situativ.
 
 ## ADR-014 — Recovery-Strategie & .gitignore
 Nach Quellcode-Verlust: Wiederherstellung aus .pyc-Decompile, **.next-Sourcemaps** (Frontend
 verbatim) und intakter DB; danach `.gitignore` (venv/.next/__pycache__/.env) + eigenes Repo,
 damit der Auslöser (Committen von Artefakten statt Source) nicht erneut passiert.
+
+## ADR-015 — Performance: Frankfurt-Co-Location + ISR + Prerender
+Ursache früherer Langsamkeit war **nicht** das Modell, sondern Cross-Region-Latenz
+(Render-US ↔ Neon-EU) pro DB-Query × vieler `selectinload`-Round-Trips. Fixes: Backend nach
+**Frankfurt** (zu Neon co-located), Listen-Queries verschlankt (keine volle Prognose-JSONB/
+elo_history), **In-Process-Cache** für die Projektion; im Frontend **ISR** (`revalidate=60`) statt
+`no-store` + **`generateStaticParams`** (Detailseiten beim Build vorgerendert). Ergebnis:
+Detail 4.5 s → 0.12 s. `MONTE_CARLO_RUNS=100000` bleibt (Sim ist Hintergrund-Task, entkoppelt vom Interface).
+
+## ADR-016 — Automatischer Sync via CI statt In-Process-Scheduler
+Ein Render-Free-Service schläft → ein interner Scheduler stoppt mit ihm. Stattdessen triggert
+**GitHub Actions** extern: `keepalive.yml` (Health, 10 min) + `sync-results.yml` (`/admin/auto-update`,
+30 min). Der externe Cron **weckt** das Backend zuverlässig. 30-min-Takt schont das RapidAPI-Kontingent.
+
+## ADR-017 — Auto-Update idempotent (Elo nur für Spiele ohne Elo-Eintrag)
+Da der Sync wiederholt läuft, darf Elo nicht doppelt angewandt werden. `apply_result` ist
+inkrementell/nicht-idempotent → `/admin/auto-update` wählt nur beendete Spiele **ohne**
+`elo_ratings`-Eintrag (chronologisch). Manuelle Eingabe legt den Eintrag bereits an → wird übersprungen.
+
+## ADR-018 — Tipp-vs-Ergebnis transparent (Kicktipp-Scoring im Frontend)
+„Empfohlener Tipp" = xG-Tipp (konsistent zur Tipps-Seite). Punkte exakt zur Backend-Logik
+(`tipping_engine._points`): Exakt 4 / Tordifferenz 3 (inkl. Remis) / Tendenz 2 / 0. Anzeige auf
+Tipps-Seite (inkl. Punkte-Bilanz) + Match-Detail. Reine Auswertung, keine Modelländerung.

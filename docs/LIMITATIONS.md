@@ -28,7 +28,11 @@ MODEL_EVALUATION). Keine nicht-reproduzierbaren Live-Quellen (z. B. Wetter-Forec
 Keine Änderung an Elo/Poisson/Dixon-Coles/Simulationsarchitektur ohne Anlass.
 
 ## Betriebliche Grenzen (Free-Stack)
-- Backend (Render Free) **schläft nach ~15 min** → Cold Start ~30–60 s. Mitigation: Uptime-Pinger.
-- Backend **eine Instanz / ein Worker** (In-Memory-Cache + BackgroundTasks) — bewusst, nicht skalieren.
-- Simulation läuft als Hintergrund-Task (~15 s bei 30k Runs); ein laufender Lauf geht bei
-  Neustart verloren, ist aber idempotent neu auslösbar.
+- Backend (Render Free) **schläft nach ~15 min** → Cold Start. **Gemindert** durch den
+  Keep-Alive-Workflow (`keepalive.yml`, Health-Ping alle 10 min); Detailseiten sind zudem
+  vorgerendert (kein Backend-Treffer beim Erstaufruf).
+- Backend **eine Instanz / ein Worker** (In-Process-Cache + BackgroundTasks) — bewusst, nicht skalieren.
+- Simulation läuft als Hintergrund-Task (100k Runs; entkoppelt vom Interface); ein laufender Lauf
+  geht bei Neustart verloren, ist aber idempotent neu auslösbar.
+- Auto-Sync alle 30 min (RapidAPI-Kontingent) → Ergebnisse erscheinen mit bis zu ~30 min Verzug
+  (kein Live-Ticker; bewusst, um die API-Quota zu schonen).

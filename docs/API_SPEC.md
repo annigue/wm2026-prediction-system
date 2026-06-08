@@ -1,6 +1,6 @@
 # API_SPEC — REST-Endpunkte
 
-Basis: `/api/v1`. Swagger UI: `/docs`. Live: `https://wm2026-backend.onrender.com`.
+Basis: `/api/v1`. Swagger UI: `/docs`. Live: `https://wm2026-backend-phwx.onrender.com`.
 Antworten als JSON. Admin-Endpunkte erfordern Header `Authorization: <ADMIN_TOKEN>`
 (auch `Bearer <token>` wird akzeptiert).
 
@@ -41,6 +41,9 @@ Antworten als JSON. Admin-Endpunkte erfordern Header `Authorization: <ADMIN_TOKE
 ## Admin (`Authorization`-Header)
 - `GET /admin/status` → Sync-/Rate-Limit-Status (kein API-Call)
 - `POST /admin/sync` → idempotenter Sync (world-cup-2026-live-api)
+- **`POST /admin/auto-update`** → Sync + Elo idempotent für neu beendete Spiele + Recompute
+  (Form/Bracket/Prognosen/Simulation). Von der CI (`sync-results.yml`) alle 30 min aufgerufen.
+  Antwort: `{ synced, elo_newly_applied, recompute: "triggered"|"skip …" }`
 - `POST /admin/simulate` → Monte-Carlo im Hintergrund
 - `GET /admin/simulation-status` → letzter Lauf
 - `POST /admin/predict-all` … (siehe Predictions)

@@ -84,8 +84,9 @@ P(Heim)=Σ_{i>j}  P(X)=Σ_{i=j}  P(Ausw)=1−P(Heim)−P(X)
   Tabellen-Ranking (Punkte→TD→Tore→Elo), Sieger/Zweite/beste 8 Dritte pro Run.
 - **KO-Runden** als Python-Loop pro Run (R32→Finale), Paarung identisch zu
   `tournament_projection.rank_and_pair`; Elfmeter = 0.5 + (Δelo)/10000.
-- Output: `champion_probs` + `stage_probs` je Team. Prod: 30.000 Runs (~15 s; verifiziert
-  gleichwertig zu 100.000 — Spanien ~18 %).
+- Output: `champion_probs` + `stage_probs` je Team. Prod: **100.000 Runs** (`MONTE_CARLO_RUNS`),
+  läuft als **Hintergrund-Task** (blockiert das Interface nicht). 30.000 Runs sind verifiziert
+  gleichwertig (Spanien ~18 %) — als Spar-Option möglich, aber nicht nötig, da entkoppelt.
 
 ## Kalibrierung
 Backtest-Kriterium Brier/LogLoss/ECE (siehe MODEL_EVALUATION). ECE des Full-Modells ≈ 0.0016

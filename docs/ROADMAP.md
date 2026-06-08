@@ -24,6 +24,9 @@
 | **Recovery (2026-06-07)** | Quellcode-Totalverlust → vollständig wiederhergestellt (siehe RECOVERY.md) |
 | **Deployment (2026-06-07)** | Free-Stack live: Vercel + Render-Free + Neon |
 | **Doku-Neuaufbau (2026-06-08)** | Gesamte `docs/` nach dem Verlust neu erstellt |
+| **Performance (2026-06-08)** | Frankfurt-Co-Location + ISR + `generateStaticParams` + verschlankte Queries + In-Process-Cache → Detail 4.5 s→0.12 s; Keep-Alive-Workflow |
+| **Auto-Sync (2026-06-08)** | `/admin/auto-update` (idempotent) + `sync-results.yml` (30 min) → Ergebnisse organisieren sich automatisch |
+| **Tipp-Auswertung (2026-06-08)** | Tipp vs. Ergebnis + Kicktipp-Punkte + Bilanz (Tipps-Seite & Match-Detail) |
 
 ## Risiko-Log (Auszug, alle behandelt)
 - football-data.org deckt WM 2026 nicht ab → world-cup-2026-live-api ✓

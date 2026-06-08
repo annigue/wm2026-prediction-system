@@ -57,4 +57,9 @@ xG = λ_home/λ_away ; top_scorelines = Top-5 nach Wahrscheinlichkeit
 
 ## Auto-Update nach Ergebnis (`matches._after_result_tasks`)
 `Ergebnis → Elo (Bayesian) → Form (form_engine) → KO-Bracket (resolver) → predict_all →
-Cache invalidieren → Simulation neu`. Alles idempotent.
+Cache invalidieren → Simulation neu`. Der Recompute-Teil ist idempotent.
+
+## Automatischer Ergebnis-Sync (`admin.auto_update`, CI alle 30 min)
+`sync_all` (echte API-Ergebnisse) → für beendete Spiele **ohne** `elo_ratings`-Eintrag (chronologisch)
+`apply_result` → derselbe Recompute. Die „ohne Elo-Eintrag"-Bedingung macht das Ganze **idempotent**
+(wiederholter Lauf wendet Elo nie doppelt an; manuell eingetragene Spiele haben den Eintrag schon).
