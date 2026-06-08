@@ -45,8 +45,15 @@ Truth** (nur diese Funktion + `scripts/refresh_form.py` schreiben `form_score`).
 ## Statische PRIOR
 - **Marktwert** — bewusst **nicht** automatisiert (Scraping fragil; Modellnutzen 6× < Elo):
   statisch, eingefroren, klar gelabelt.
-- **Alter/Caps** — als Modell-Faktoren entfernt; Spalten bleiben nur zur Anzeige.
-- **Venue-Geodaten** — Höhe + Koordinaten; treiben Höhe/Reise (Adjuster) + Umwelt-Stress (Sim).
+- **Alter/Caps/FIFA-Ranking** — als Modell-Faktoren entfernt; bleiben nur zur Anzeige
+  (im UI als „nicht im Modell" gekennzeichnet).
+
+## Spielorte & Spielplan-Verknüpfung
+- **16 echte WM-Stadien** mit Höhe + Koordinaten → treiben Höhe/Reise (Adjuster) + Umwelt-Stress (Sim).
+- **API liefert keine Stadien** (geprüft: nur Fixtures/Tabellen). Daher wurden die **72 Gruppenspiele**
+  via **offiziellem FIFA-Spielplan** mit ihren Stadien verknüpft (`scripts/load_venue_schedule.py`,
+  Schlüssel = Team-Paarung). Erst dadurch sind Höhe/Reise/Umwelt-Stress **aktiv**.
+- Fehlende Spielorte (Atlanta/Seattle) ergänzt; Seed-Fremdkörper (Denver/Las Vegas) entfernt → exakt 16.
 
 ## Fallback-Strategie
 System funktioniert ohne externe APIs: DB-Stand bleibt erhalten, Ergebnisse manuell via

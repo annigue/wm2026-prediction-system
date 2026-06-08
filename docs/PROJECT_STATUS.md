@@ -26,7 +26,8 @@ Details + Performance-Architektur: [DEPLOYMENT.md](DEPLOYMENT.md).
 
 - **Elo-Rating** (Init aus eloratings.net, live via Bayesian Update nach jedem Ergebnis)
 - **Poisson + Dixon-Coles** Tormodell → W/U/N + xG + Scoreline-Verteilung
-- **Feature Adjustment Layer** (5 deterministische Faktoren als Elo-Delta)
+- **Feature Adjustment Layer** (5 Faktoren: Form, Markt, Höhe, Reise, Erholung — Höhe/Reise aktiv via Venue-Verknüpfung)
+- **Gastgeber-Heimvorteil** (USA/Kanada/Mexiko, Gruppenphase, tunebar)
 - **Context Injection Layer** (stochastische Varianz in der Simulation)
 - **Monte-Carlo-Turniersimulation** (Prod: 100.000 Runs, Hintergrund-Task)
 - **KO-Bracket-Resolver** (füllt KO-Spiele aus realen Ergebnissen)

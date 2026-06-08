@@ -54,6 +54,18 @@ auf beide Teams verteilt: `adj_home = elo_home + total·0.5`, `adj_away = elo_aw
 vor Turnierstart. **Entfernt** (Datenqualität): Alter, Caps (Seed-Schätzwerte, Einfluss ≈0),
 FIFA-Ranking (nur noch Elo-Init). Zeitzone nie implementiert.
 
+**Voraussetzung Höhe/Reise:** brauchen die Venue-Verknüpfung pro Spiel. Die WM-API liefert
+**keine** Stadien → die 72 Gruppenspiele wurden via offiziellem FIFA-Spielplan verknüpft
+(`scripts/load_venue_schedule.py`). Ohne Verknüpfung wären diese beiden Faktoren inaktiv.
+
+## Layer 2a+ — Gastgeber-Heimvorteil (`prediction_engine._host_bonus`)
+Gerichteter Elo-Bonus **ON TOP** der Feature-Adjustierung: `host_advantage_elo` (Default **+55**,
+env-tunebar) für ein Gastgeber-Team (USA/Kanada/Mexiko) **nur in der Gruppenphase** (dort
+strukturell im eigenen Land). Knüpft an die **Team-Identität**, nicht an die nominelle Home/Away-
+Listung; K.-o. bleibt neutral (Austragungsort unklar). Bildet Publikum + Vertrautheit ab —
+Reise/Höhe sind separat → kein Double-Counting. Konsistent in Einzelprognose **und** Simulation
+(`tournament_simulator`: Bonus auf das Host-Elo im Gruppen-Array).
+
 ## Layer 2b — Context Injection (`context_modifier.py`, Simulation)
 
 Stochastische Match-zu-Match-Varianz pro Run (deterministisch + Rauschen), gedeckelt ±40 Elo:

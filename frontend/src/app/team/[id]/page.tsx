@@ -114,18 +114,26 @@ export default async function TeamPage({ params }: { params: { id: string } }) {
 
       {/* Kennzahlen */}
       {f && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <StatCard label="Elo-Rating" value={f.elo_rating ? Math.round(f.elo_rating).toString() : "—"} />
-          <StatCard label="FIFA-Ranking" value={f.fifa_ranking ? `#${f.fifa_ranking}` : "—"} />
-          <StatCard
-            label="Marktwert"
-            value={f.market_value_millions ? `${f.market_value_millions.toFixed(0)} M€` : "—"}
-          />
-          <StatCard
-            label="Ø Alter"
-            value={f.avg_squad_age ? `${f.avg_squad_age.toFixed(1)} J` : "—"}
-            sub={f.avg_caps_per_player ? `Ø ${f.avg_caps_per_player.toFixed(0)} Caps` : undefined}
-          />
+        <div className="space-y-1.5">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <StatCard label="Elo-Rating" value={f.elo_rating ? Math.round(f.elo_rating).toString() : "—"} />
+            <StatCard label="FIFA-Ranking" value={f.fifa_ranking ? `#${f.fifa_ranking}` : "—"} sub="nicht im Modell" />
+            <StatCard
+              label="Marktwert"
+              value={f.market_value_millions ? `${f.market_value_millions.toFixed(0)} M€` : "—"}
+              sub="Schätzung"
+            />
+            <StatCard
+              label="Ø Alter"
+              value={f.avg_squad_age ? `${f.avg_squad_age.toFixed(1)} J` : "—"}
+              sub={f.avg_caps_per_player ? `≈${f.avg_caps_per_player.toFixed(0)} Caps · nicht im Modell` : "nicht im Modell"}
+            />
+          </div>
+          <p className="text-[11px] text-wm-muted">
+            Modell-Basis ist <strong>Elo</strong> (aus eloratings.net). Der <strong>Marktwert</strong> ist ein
+            eingefrorener Schätzwert und fließt nur schwach ein. <strong>FIFA-Ranking, Alter &amp; Caps</strong> sind
+            Schätzwerte und fließen <strong>nicht</strong> in die Prognose ein.
+          </p>
         </div>
       )}
 

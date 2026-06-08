@@ -80,3 +80,21 @@ inkrementell/nicht-idempotent → `/admin/auto-update` wählt nur beendete Spiel
 „Empfohlener Tipp" = xG-Tipp (konsistent zur Tipps-Seite). Punkte exakt zur Backend-Logik
 (`tipping_engine._points`): Exakt 4 / Tordifferenz 3 (inkl. Remis) / Tendenz 2 / 0. Anzeige auf
 Tipps-Seite (inkl. Punkte-Bilanz) + Match-Detail. Reine Auswertung, keine Modelländerung.
+
+## ADR-019 — Gastgeber-Heimvorteil (einziger gerichteter „Heim"-Term)
+Poisson ist bewusst symmetrisch (WM = neutraler Boden). Echten Heimvorteil hat nur der Gastgeber
+im eigenen Land. Daher gerichteter Bonus (`host_advantage_elo=55`, tunebar) **nur** für USA/Kanada/
+Mexiko in der **Gruppenphase**, gekoppelt an die **Team-Identität** (nicht an die nominelle Home/Away-
+Listung). K.-o. neutral. Konservativ wegen Co-Gastgeber-Verdünnung. Konsistent in Prognose + Simulation.
+
+## ADR-020 — Venue-Verknüpfung aus offiziellem Spielplan (API hat keine Stadien)
+Geprüft: die WM-API liefert keine Venue-/Spieler-/Karten-Daten (nur Fixtures + Tabellen). Höhe/Reise/
+Umwelt-Stress brauchen aber Stadien → die 72 Gruppenspiele wurden via **offiziellem FIFA-Spielplan**
+verknüpft (`scripts/load_venue_schedule.py`, Match-Schlüssel = Team-Paarung). Fehlende echte Spielorte
+(Atlanta, Seattle) ergänzt; Seed-Fremdkörper (Denver, Las Vegas) entfernt. Keine erfundenen Zuordnungen.
+
+## ADR-021 — Transparenz statt versteckter Schätzwerte
+Schätzwerte werden offen gekennzeichnet, nicht versteckt: im UI sind `fifa_ranking`, `avg_squad_age`,
+`avg_caps` als „nicht im Modell", der Marktwert als „Schätzung" markiert. Spielerebene wurde geprüft
+und **bewusst verworfen** (keine freie/zuverlässige Quelle; Nutzen ≪ Aufwand) — siehe auch die
+geprüfte, aber nicht umgesetzte Sperren-Logik via `/wc/match/{id}/commentary`.
