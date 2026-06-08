@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
 import { Providers } from "./providers";
-import { SyncButton } from "@/components/SyncButton";
+import { StatusBar } from "@/components/StatusBar";
 
 export const metadata: Metadata = {
   title: "WM 2026 Prognose",
@@ -30,7 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <NavLink href="/tipps">🎯 Tipps</NavLink>
                 </nav>
                 <div className="hidden md:flex border-l border-wm-border pl-4">
-                  <SyncButton />
+                  <StatusBar />
                 </div>
               </div>
             </div>
