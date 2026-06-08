@@ -1,0 +1,22 @@
+name: Keep backend warm
+
+# Hält das Render-Free-Backend wach (schläft sonst nach ~15 min Inaktivität → Cold Start).
+# Pingt alle 10 Minuten den Health-Endpoint. Läuft auf GitHubs Infrastruktur, kostenlos.
+on:
+  schedule:
+    - cron: "*/10 * * * *"   # alle 10 Minuten (unter der 15-min-Sleep-Schwelle)
+  workflow_dispatch: {}       # erlaubt manuelles Auslösen im Actions-Tab
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping /health
+        run: |
+          for i in 1 2 3; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 90 \
+              https://wm2026-backend-phwx.onrender.com/api/v1/health) && \
+            echo "Versuch $i → HTTP $code" && [ "$code" = "200" ] && exit 0
+            sleep 15
+          done
+          echo "Health nicht erreichbar (evtl. Cold Start im Gange) — kein harter Fehler."
