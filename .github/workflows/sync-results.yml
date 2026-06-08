@@ -1,0 +1,29 @@
+name: Sync results
+
+# Holt regelmäßig echte Ergebnisse von der WM-API und stößt die Neuberechnung an
+# (Elo → Form → KO-Bracket → Prognosen → Simulation). Idempotent: Elo wird nur für
+# neu beendete Spiele angewandt. Braucht das Repo-Secret ADMIN_TOKEN (= Render-Wert).
+on:
+  schedule:
+    - cron: "*/30 * * * *"   # alle 30 Min (schont das RapidAPI-Kontingent)
+  workflow_dispatch: {}       # manueller Start im Actions-Tab
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: POST /admin/auto-update
+        env:
+          BASE: https://wm2026-backend-phwx.onrender.com
+          TOKEN: ${{ secrets.ADMIN_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::warning::Secret ADMIN_TOKEN fehlt — Sync übersprungen."
+            echo "Anlegen: GitHub → Repo → Settings → Secrets and variables → Actions → New repository secret (Name: ADMIN_TOKEN)."
+            exit 0
+          fi
+          echo "Sync + Recompute wird angestoßen ..."
+          code=$(curl -s -o /tmp/out.json -w "%{http_code}" --max-time 180 \
+            -X POST "$BASE/api/v1/admin/auto-update" -H "Authorization: $TOKEN")
+          echo "HTTP $code"; cat /tmp/out.json 2>/dev/null; echo
+          [ "$code" = "200" ] || { echo "::error::Auto-Update fehlgeschlagen (HTTP $code)"; exit 1; }

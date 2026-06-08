@@ -5,7 +5,7 @@ import { FactorExplanation } from "@/components/ui/FactorExplanation";
 import { ResultFormWrapper } from "@/components/ResultFormWrapper";
 import { BettingPanel } from "@/components/BettingPanel";
 import { TipPanel } from "@/components/TipPanel";
-import { computeTips, outcomeColor, outcomeBg } from "@/lib/tips";
+import { computeTips, outcomeColor, outcomeBg, evaluateTip, evalColor } from "@/lib/tips";
 import Link from "next/link";
 
 function fmt(iso?: string) {
@@ -114,6 +114,35 @@ export default async function MatchPage({ params }: { params: { id: string } }) 
           />
         )}
       </div>
+
+      {pred && match.status === "FINISHED" && result && (() => {
+        const tip = computeTips(pred).xgTip;
+        const ev = evaluateTip(tip.score, result);
+        return (
+          <div className="card border border-wm-border space-y-3">
+            <h3 className="text-sm font-semibold text-white">🎯 Empfohlener Tipp vs. Ergebnis</h3>
+            <div className="flex items-center gap-5 flex-wrap">
+              <div className="text-center">
+                <div className={`text-3xl font-black ${outcomeColor(tip.outcome)}`}>{tip.score}</div>
+                <div className="text-xs text-wm-muted mt-1">Empfohlener Tipp (xG)</div>
+              </div>
+              <div className="text-2xl text-wm-muted">→</div>
+              <div className="text-center">
+                <div className="text-3xl font-black text-white">{result.home_goals}:{result.away_goals}</div>
+                <div className="text-xs text-wm-muted mt-1">Tatsächliches Ergebnis</div>
+              </div>
+              {ev && (
+                <div className="flex-1 text-right min-w-[8rem]">
+                  <div className={`text-3xl font-black ${evalColor(ev.kind)}`}>
+                    +{ev.points} <span className="text-base font-normal text-wm-muted">Pkt</span>
+                  </div>
+                  <div className="text-xs text-wm-muted">{ev.label} · Exakt 4 / Tordiff 3 / Tendenz 2</div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {pred && match.status !== "FINISHED" && (() => {
         const { xgTip, modelTip } = computeTips(pred);

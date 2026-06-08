@@ -34,6 +34,59 @@ async def sync_data(authorization: str = Header(...)):
     return result
 
 
+@router.post("/auto-update")
+async def auto_update(background_tasks: BackgroundTasks,
+                      authorization: str = Header(...),
+                      db: AsyncSession = Depends(get_db)):
+    """Automatischer Voll-Update (für CI-Cron):
+    1) Ergebnisse von der API synchronisieren,
+    2) Elo für NEU beendete Spiele nachziehen (idempotent — nur Spiele ohne Elo-Eintrag),
+    3) bei neuen Ergebnissen: Form/KO-Bracket/Prognosen/Simulation im Hintergrund neu berechnen.
+    """
+    _check_token(authorization)
+    from app.services.sync_service import sync_all
+    from app.services.bayesian_updater import apply_result
+    from app.models.match import Match, MatchResult
+    from app.models.team import EloRating
+    from app.routers.matches import _after_result_tasks
+
+    # 1) Ergebnisse synchronisieren
+    engine = create_engine(settings.database_url_sync)
+    Session = sessionmaker(bind=engine)
+    with Session() as session:
+        sync_summary = sync_all(session)
+    engine.dispose()
+
+    # 2) Beendete Spiele mit Ergebnis, aber ohne Elo-Eintrag → chronologisch Elo nachziehen
+    elo_exists = select(EloRating.id).where(EloRating.match_id == Match.id).exists()
+    new_matches = (await db.execute(
+        select(Match).join(MatchResult, MatchResult.match_id == Match.id)
+        .where(Match.status == "FINISHED",
+               Match.home_team_id.isnot(None), Match.away_team_id.isnot(None),
+               ~elo_exists)
+        .order_by(Match.kickoff_utc)
+    )).scalars().all()
+
+    applied = []
+    for m in new_matches:
+        res = (await db.execute(
+            select(MatchResult).where(MatchResult.match_id == m.id))).scalar_one()
+        await apply_result(match_id=m.id, home_team_id=m.home_team_id,
+                           away_team_id=m.away_team_id,
+                           home_goals=res.home_goals, away_goals=res.away_goals, db=db)
+        applied.append(m.id)
+
+    if applied:
+        await db.commit()
+        background_tasks.add_task(_after_result_tasks, applied[-1])
+
+    return {
+        "synced": sync_summary,
+        "elo_newly_applied": len(applied),
+        "recompute": "triggered" if applied else "skip (keine neuen Ergebnisse)",
+    }
+
+
 @router.post("/simulate")
 async def run_simulation(background_tasks: BackgroundTasks, authorization: str = Header(...)):
     _check_token(authorization)
