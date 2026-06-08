@@ -38,4 +38,4 @@ services:
       - key: ENV
         value: production
       - key: MONTE_CARLO_RUNS
-        value: "30000"
+        value: "100000"          # nur Hintergrund-Sim (blockiert das Interface nicht)
