@@ -50,44 +50,51 @@ async def auto_update(background_tasks: BackgroundTasks,
     from app.models.team import EloRating
     from app.routers.matches import _after_result_tasks
 
-    # 1) Synchronisieren: Spielplan/Status via RapidAPI, ECHTE Ergebnisse via API-Football
     from app.services.apifootball_service import sync_results
-    engine = create_engine(settings.database_url_sync)
-    Session = sessionmaker(bind=engine)
-    with Session() as session:
-        sync_summary = sync_all(session)
-        sync_summary["apifootball"] = sync_results(session)
-        session.commit()
-    engine.dispose()
+    import traceback as _tb
+    try:
+        # 1) Synchronisieren: Spielplan/Status via RapidAPI, ECHTE Ergebnisse via API-Football
+        engine = create_engine(settings.database_url_sync)
+        Session = sessionmaker(bind=engine)
+        with Session() as session:
+            sync_summary = sync_all(session)
+            sync_summary["apifootball"] = sync_results(session)
+            session.commit()
+        engine.dispose()
 
-    # 2) Beendete Spiele mit Ergebnis, aber ohne Elo-Eintrag → chronologisch Elo nachziehen
-    elo_exists = select(EloRating.id).where(EloRating.match_id == Match.id).exists()
-    new_matches = (await db.execute(
-        select(Match).join(MatchResult, MatchResult.match_id == Match.id)
-        .where(Match.status == "FINISHED",
-               Match.home_team_id.isnot(None), Match.away_team_id.isnot(None),
-               ~elo_exists)
-        .order_by(Match.kickoff_utc)
-    )).scalars().all()
+        # 2) Beendete Spiele mit Ergebnis, aber ohne Elo-Eintrag → chronologisch Elo nachziehen
+        elo_exists = select(EloRating.id).where(EloRating.match_id == Match.id).exists()
+        new_matches = (await db.execute(
+            select(Match).join(MatchResult, MatchResult.match_id == Match.id)
+            .where(Match.status == "FINISHED",
+                   Match.home_team_id.isnot(None), Match.away_team_id.isnot(None),
+                   ~elo_exists)
+            .order_by(Match.kickoff_utc)
+        )).scalars().all()
 
-    applied = []
-    for m in new_matches:
-        res = (await db.execute(
-            select(MatchResult).where(MatchResult.match_id == m.id))).scalar_one()
-        await apply_result(match_id=m.id, home_team_id=m.home_team_id,
-                           away_team_id=m.away_team_id,
-                           home_goals=res.home_goals, away_goals=res.away_goals, db=db)
-        applied.append(m.id)
+        applied = []
+        for m in new_matches:
+            res = (await db.execute(
+                select(MatchResult).where(MatchResult.match_id == m.id))).scalar_one()
+            await apply_result(match_id=m.id, home_team_id=m.home_team_id,
+                               away_team_id=m.away_team_id,
+                               home_goals=res.home_goals, away_goals=res.away_goals, db=db)
+            applied.append(m.id)
 
-    if applied:
-        await db.commit()
-        background_tasks.add_task(_after_result_tasks, applied[-1])
+        if applied:
+            await db.commit()
+            background_tasks.add_task(_after_result_tasks, applied[-1])
 
-    return {
-        "synced": sync_summary,
-        "elo_newly_applied": len(applied),
-        "recompute": "triggered" if applied else "skip (keine neuen Ergebnisse)",
-    }
+        return {
+            "ok": True,
+            "synced": sync_summary,
+            "elo_newly_applied": len(applied),
+            "recompute": "triggered" if applied else "skip (keine neuen Ergebnisse)",
+        }
+    except Exception as e:
+        # Kein 500 mehr: Fehler diagnose-fähig zurückgeben (erscheint im CI-Log)
+        return {"ok": False, "error": str(e), "type": type(e).__name__,
+                "trace": _tb.format_exc()[-1500:]}
 
 
 @router.post("/simulate")
