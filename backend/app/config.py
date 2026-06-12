@@ -24,6 +24,10 @@ class Settings(BaseSettings):
     football_data_base_url: str = "https://api.football-data.org/v4"
     rapidapi_key: str = ""
 
+    # API-Football (api-sports.io) — zuverlässige Ergebnis-Quelle (WM 2026, League 1)
+    football_api_key: str = ""
+    football_api_base: str = "https://v3.football.api-sports.io"
+
     # ── Betting Decision Engine ──────────────────────────────────────────────
     betting_ev_threshold: float = 0.02
     betting_min_probability: float = 0.05

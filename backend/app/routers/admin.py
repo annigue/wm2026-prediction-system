@@ -50,11 +50,14 @@ async def auto_update(background_tasks: BackgroundTasks,
     from app.models.team import EloRating
     from app.routers.matches import _after_result_tasks
 
-    # 1) Ergebnisse synchronisieren
+    # 1) Synchronisieren: Spielplan/Status via RapidAPI, ECHTE Ergebnisse via API-Football
+    from app.services.apifootball_service import sync_results
     engine = create_engine(settings.database_url_sync)
     Session = sessionmaker(bind=engine)
     with Session() as session:
         sync_summary = sync_all(session)
+        sync_summary["apifootball"] = sync_results(session)
+        session.commit()
     engine.dispose()
 
     # 2) Beendete Spiele mit Ergebnis, aber ohne Elo-Eintrag → chronologisch Elo nachziehen
