@@ -28,6 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <NavLink href="/matches">Spiele</NavLink>
                   <NavLink href="/bracket">Baum</NavLink>
                   <NavLink href="/tipps">🎯 Tipps</NavLink>
+                  <NavLink href="/admin">⚙</NavLink>
                 </nav>
                 <div className="hidden md:flex border-l border-wm-border pl-4">
                   <StatusBar />

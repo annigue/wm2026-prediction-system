@@ -3,7 +3,6 @@
 // Reine Status-Anzeige (kein Admin-Eingriff): zeigt, wie aktuell Daten + Simulation sind.
 // Sync läuft automatisch alle 30 min, die Simulation nach jedem neuen Spielergebnis.
 import { useState, useEffect } from "react";
-import Link from "next/link";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -48,9 +47,6 @@ export function StatusBar() {
       <span title="Letzte Monte-Carlo-Simulation (automatisch nach jedem Spielergebnis)">
         🎲 Simulation: <span className="text-gray-300">{sim?.available ? fmt(sim.simulated_at) : "—"}</span>
       </span>
-      <Link href="/admin" className="opacity-60 hover:opacity-100 hover:text-white" title="Admin: Sync & Simulation manuell">
-        ⚙
-      </Link>
     </div>
   );
 }
