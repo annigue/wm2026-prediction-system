@@ -11,6 +11,7 @@ export default function AdminPage() {
   const [token, setToken] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [out, setOut] = useState("");
+  const [show, setShow] = useState(false);
 
   useEffect(() => {
     setToken(localStorage.getItem("wm2026_admin_token") ?? "");
@@ -31,7 +32,7 @@ export default function AdminPage() {
     try {
       const r = await fetch(`${API}/api/v1/${path}`, {
         method: "POST",
-        headers: { Authorization: token },
+        headers: { Authorization: token.trim() },
       });
       const txt = await r.text();
       let pretty = txt;
@@ -61,16 +62,27 @@ export default function AdminPage() {
       </div>
 
       <div className="card space-y-2">
-        <label className="text-sm text-wm-muted">Admin-Token</label>
+        <div className="flex items-center justify-between">
+          <label className="text-sm text-wm-muted">Admin-Token</label>
+          <button
+            type="button"
+            onClick={() => setShow(!show)}
+            className="text-xs text-wm-muted hover:text-white underline"
+          >
+            {show ? "verbergen" : "anzeigen"}
+          </button>
+        </div>
         <input
-          type="password"
+          type={show ? "text" : "password"}
           value={token}
           onChange={(e) => saveToken(e.target.value)}
           placeholder="ADMIN_TOKEN (aus Render)"
-          className="w-full bg-wm-dark border border-wm-border rounded-lg px-3 py-2 text-sm text-white focus:border-gray-500 outline-none"
+          autoComplete="off"
+          spellCheck={false}
+          className="w-full bg-wm-dark border border-wm-border rounded-lg px-3 py-2 text-sm text-white focus:border-gray-500 outline-none font-mono"
         />
         <p className="text-[11px] text-wm-muted">
-          Wird nur lokal im Browser gespeichert, nicht in den Code eingebaut.
+          {token.length} Zeichen · nur lokal im Browser gespeichert. Der korrekte Token ist 44 Zeichen lang und endet auf „=".
         </p>
       </div>
 
