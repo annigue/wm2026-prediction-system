@@ -62,28 +62,31 @@ async def auto_update(background_tasks: BackgroundTasks,
             session.commit()
         engine.dispose()
 
-        # 2) Beendete Spiele mit Ergebnis, aber ohne Elo-Eintrag → chronologisch Elo nachziehen
-        elo_exists = select(EloRating.id).where(EloRating.match_id == Match.id).exists()
-        new_matches = (await db.execute(
-            select(Match).join(MatchResult, MatchResult.match_id == Match.id)
-            .where(Match.status == "FINISHED",
-                   Match.home_team_id.isnot(None), Match.away_team_id.isnot(None),
-                   ~elo_exists)
-            .order_by(Match.kickoff_utc)
-        )).scalars().all()
-
+        # 2) Beendete Spiele mit Ergebnis, aber ohne Elo-Eintrag → chronologisch Elo nachziehen.
+        #    FRISCHE Session: die injizierte `db` wird durch den langen, blockierenden Sync-Block
+        #    oben von Neon getrennt ("connection is closed").
         applied = []
-        for m in new_matches:
-            res = (await db.execute(
-                select(MatchResult).where(MatchResult.match_id == m.id))).scalar_one()
-            await apply_result(match_id=m.id, home_team_id=m.home_team_id,
-                               away_team_id=m.away_team_id,
-                               home_goals=res.home_goals, away_goals=res.away_goals, db=db)
-            applied.append(m.id)
+        async with AsyncSessionLocal() as db2:
+            elo_exists = select(EloRating.id).where(EloRating.match_id == Match.id).exists()
+            new_matches = (await db2.execute(
+                select(Match).join(MatchResult, MatchResult.match_id == Match.id)
+                .where(Match.status == "FINISHED",
+                       Match.home_team_id.isnot(None), Match.away_team_id.isnot(None),
+                       ~elo_exists)
+                .order_by(Match.kickoff_utc)
+            )).scalars().all()
 
-        if applied:
-            await db.commit()
-            background_tasks.add_task(_after_result_tasks, applied[-1])
+            for m in new_matches:
+                res = (await db2.execute(
+                    select(MatchResult).where(MatchResult.match_id == m.id))).scalar_one()
+                await apply_result(match_id=m.id, home_team_id=m.home_team_id,
+                                   away_team_id=m.away_team_id,
+                                   home_goals=res.home_goals, away_goals=res.away_goals, db=db2)
+                applied.append(m.id)
+
+            if applied:
+                await db2.commit()
+                background_tasks.add_task(_after_result_tasks, applied[-1])
 
         return {
             "ok": True,
