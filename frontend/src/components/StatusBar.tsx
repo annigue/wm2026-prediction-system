@@ -28,8 +28,23 @@ export function StatusBar() {
   const [sim, setSim] = useState<SimStatus | null>(null);
 
   useEffect(() => {
-    fetch(`${API}/api/v1/admin/status`).then((r) => (r.ok ? r.json() : null)).then(setSync).catch(() => {});
-    fetch(`${API}/api/v1/admin/simulation-status`).then((r) => (r.ok ? r.json() : null)).then(setSim).catch(() => {});
+    // Letzte bekannte Werte sofort aus dem Cache zeigen (kein Flackern/Verschwinden beim Reload)
+    try {
+      const cs = localStorage.getItem("wm2026_sync");
+      if (cs) setSync(JSON.parse(cs));
+      const cm = localStorage.getItem("wm2026_sim");
+      if (cm) setSim(JSON.parse(cm));
+    } catch { /* ignore */ }
+
+    // Aktualisieren — nur überschreiben, wenn der Fetch erfolgreich ist (sonst Cache behalten)
+    fetch(`${API}/api/v1/admin/status`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d) { setSync(d); localStorage.setItem("wm2026_sync", JSON.stringify(d)); } })
+      .catch(() => {});
+    fetch(`${API}/api/v1/admin/simulation-status`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d) { setSim(d); localStorage.setItem("wm2026_sim", JSON.stringify(d)); } })
+      .catch(() => {});
   }, []);
 
   const rate =

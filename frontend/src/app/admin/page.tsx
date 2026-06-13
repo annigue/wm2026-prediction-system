@@ -9,7 +9,7 @@ import { API_BASE as API } from "@/lib/apiBase";
 export default function AdminPage() {
   const [token, setToken] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
-  const [out, setOut] = useState("");
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [show, setShow] = useState(false);
 
   useEffect(() => {
@@ -23,26 +23,40 @@ export default function AdminPage() {
 
   async function call(label: string, path: string) {
     if (!token) {
-      setOut("⚠ Bitte zuerst den Admin-Token eingeben.");
+      setMsg({ ok: false, text: "Bitte zuerst den Admin-Token eingeben." });
       return;
     }
     setBusy(label);
-    setOut("");
+    setMsg(null);
     try {
       const r = await fetch(`${API}/api/v1/${path}`, {
         method: "POST",
         headers: { Authorization: token.trim() },
       });
-      const txt = await r.text();
-      let pretty = txt;
-      try {
-        pretty = JSON.stringify(JSON.parse(txt), null, 2);
-      } catch {
-        /* kein JSON */
+      let data: any = null;
+      try { data = await r.json(); } catch { /* kein JSON */ }
+
+      if (r.status === 401) {
+        setMsg({ ok: false, text: "Falscher Admin-Token." });
+      } else if (!r.ok || data?.ok === false) {
+        setMsg({ ok: false, text: `Fehler (HTTP ${r.status}). Bitte später erneut versuchen.` });
+      } else if (label === "sync") {
+        const af = data?.synced?.apifootball ?? {};
+        const abgeglichen = (af.results_added ?? 0) + (af.results_updated ?? 0);
+        const parts = [`${abgeglichen} Ergebnis(se) abgeglichen`];
+        if (af.results_added) parts.push(`${af.results_added} neu`);
+        if (data.elo_newly_applied) parts.push(`${data.elo_newly_applied} Spiel(e) verrechnet`);
+        parts.push(
+          typeof data.recompute === "string" && data.recompute.startsWith("triggered")
+            ? "Neuberechnung gestartet"
+            : "keine neuen Ergebnisse"
+        );
+        setMsg({ ok: true, text: "Synchronisiert · " + parts.join(" · ") });
+      } else {
+        setMsg({ ok: true, text: "Simulation gestartet — Ergebnis in ~1–2 min sichtbar." });
       }
-      setOut(`HTTP ${r.status}\n${pretty}`);
-    } catch (e) {
-      setOut("Verbindungsfehler: " + String(e));
+    } catch {
+      setMsg({ ok: false, text: "Verbindungsfehler — Backend nicht erreichbar." });
     } finally {
       setBusy(null);
     }
@@ -104,10 +118,15 @@ export default function AdminPage() {
         </button>
       </div>
 
-      {out && (
-        <pre className="card text-xs text-gray-300 overflow-x-auto whitespace-pre-wrap break-words">
-          {out}
-        </pre>
+      {msg && (
+        <div
+          className={`card text-sm border ${
+            msg.ok ? "border-green-600/40 text-green-300" : "border-red-600/40 text-red-300"
+          }`}
+        >
+          {msg.ok ? "✅ " : "❌ "}
+          {msg.text}
+        </div>
       )}
 
       <p className="text-[11px] text-wm-muted">
