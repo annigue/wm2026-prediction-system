@@ -11,10 +11,25 @@ export default function AdminPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [show, setShow] = useState(false);
+  const [cal, setCal] = useState<any>(null);
+  const [calBusy, setCalBusy] = useState(false);
 
   useEffect(() => {
     setToken(localStorage.getItem("wm2026_admin_token") ?? "");
+    loadCal();
   }, []);
+
+  async function loadCal() {
+    setCalBusy(true);
+    try {
+      const r = await fetch(`${API}/api/v1/admin/market-calibration`);
+      setCal(r.ok ? await r.json() : null);
+    } catch {
+      setCal(null);
+    } finally {
+      setCalBusy(false);
+    }
+  }
 
   function saveToken(v: string) {
     setToken(v);
@@ -133,6 +148,73 @@ export default function AdminPage() {
         „Daten synchronisieren" macht alles (Ergebnisse holen → Elo → Form → Bracket → Prognosen →
         Simulation). „Nur Simulation" rechnet ausschließlich die Turniersimulation neu.
       </p>
+
+      {/* Kalibrierungs-Monitor: reines Modell vs. Markt vs. offizielle (geblendete) Prognose */}
+      <div className="card space-y-2">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-white">📊 Modell-Kalibrierung</h3>
+          <button
+            type="button"
+            onClick={loadCal}
+            disabled={calBusy}
+            className="text-xs text-wm-muted hover:text-white underline disabled:opacity-50"
+          >
+            {calBusy ? "lädt…" : "aktualisieren"}
+          </button>
+        </div>
+
+        {!cal || cal.available === false ? (
+          <p className="text-xs text-wm-muted">
+            {cal?.reason ?? "Noch keine Kalibrierungsdaten."}
+          </p>
+        ) : (
+          <div className="space-y-2">
+            <div className="text-xs text-wm-muted">
+              {cal.n_matches} Spiele mit Markt-Snapshot · {cal.n_with_results} gespielt · Blend-Gewicht
+              {" "}w={Math.round((cal.blend_weight ?? 0) * 100)}%
+            </div>
+
+            {cal.n_with_results > 0 ? (
+              <>
+                <div className="text-xs text-wm-muted">Brier-Score (niedriger = besser):</div>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  {([
+                    ["Modell", "mean_brier_model", "modell"],
+                    ["Markt", "mean_brier_market", "markt"],
+                    ["Geblendet", "mean_brier_blended", "geblendet"],
+                  ] as const).map(([lbl, key, id]) => (
+                    <div
+                      key={id}
+                      className={`rounded-lg py-2 ${
+                        cal.best_brier === id
+                          ? "bg-green-600/15 border border-green-600/40"
+                          : "bg-white/5"
+                      }`}
+                    >
+                      <div className="font-mono font-bold text-white">
+                        {typeof cal[key] === "number" ? cal[key].toFixed(3) : "—"}
+                      </div>
+                      <div className="text-[11px] text-wm-muted">
+                        {lbl}{id === "geblendet" ? " (offiziell)" : ""}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="text-[11px] text-wm-muted">
+                  Bestes Verfahren bisher: <span className="text-gray-300">{cal.best_brier}</span>
+                </div>
+              </>
+            ) : (
+              <p className="text-xs text-wm-muted">
+                Noch kein gespieltes Spiel mit Markt-Snapshot — der Brier-Vergleich erscheint, sobald
+                die ersten jetzt prognostizierten Spiele ausgetragen sind.
+              </p>
+            )}
+
+            {cal.note && <p className="text-[10px] text-wm-muted">{cal.note}</p>}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
