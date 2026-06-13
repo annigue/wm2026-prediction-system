@@ -4,8 +4,7 @@
 // Der Admin-Token wird vom Nutzer eingegeben und NUR lokal (localStorage) gehalten —
 // er landet NICHT im öffentlichen Build. Ohne gültigen Token lehnt das Backend ab (401).
 import { useEffect, useState } from "react";
-
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+import { API_BASE as API } from "@/lib/apiBase";
 
 export default function AdminPage() {
   const [token, setToken] = useState("");

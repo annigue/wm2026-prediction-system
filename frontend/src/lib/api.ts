@@ -3,8 +3,9 @@ import type {
   SimulationResult, DashboardData,
 } from "@/types";
 
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-const API = `${BASE}/api/v1`;
+import { API_BASE } from "./apiBase";
+
+const API = `${API_BASE}/api/v1`;
 
 // ISR-Caching (Performance): Daten ändern sich nur bei Ergebnis-Eingabe (während der WM
 // ein paar Mal/Tag). Vercel cached die SSR-Seiten und liefert sie nahezu instant aus

@@ -3,8 +3,7 @@
 // Reine Status-Anzeige (kein Admin-Eingriff): zeigt, wie aktuell Daten + Simulation sind.
 // Sync läuft automatisch alle 30 min, die Simulation nach jedem neuen Spielergebnis.
 import { useState, useEffect } from "react";
-
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+import { API_BASE as API } from "@/lib/apiBase";
 
 interface SyncStatus {
   requests_remaining: number | null;
