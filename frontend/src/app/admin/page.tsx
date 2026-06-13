@@ -81,7 +81,7 @@ export default function AdminPage() {
           className="w-full bg-wm-dark border border-wm-border rounded-lg px-3 py-2 text-sm text-white focus:border-gray-500 outline-none font-mono"
         />
         <p className="text-[11px] text-wm-muted">
-          {token.length} Zeichen · nur lokal im Browser gespeichert. Der korrekte Token ist 44 Zeichen lang und endet auf „=".
+          {token.length} Zeichen · nur lokal im Browser gespeichert. Muss exakt dem ADMIN_TOKEN aus Render entsprechen.
         </p>
       </div>
 
