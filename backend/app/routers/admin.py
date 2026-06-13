@@ -16,10 +16,15 @@ def _check_token(authorization: str):
 
 
 @router.get("/status")
-async def sync_status():
+async def sync_status(db: AsyncSession = Depends(get_db)):
     """Sync-/Rate-Limit-Status (KEIN API-Call)."""
     from app.services.sync_service import get_status
-    return get_status()
+    from app.models.appstate import AppState
+    s = get_status()
+    row = await db.get(AppState, "last_sync")
+    if row:
+        s["last_sync"] = row.value  # persistierter Wert überlebt Neustarts
+    return s
 
 
 @router.post("/sync")

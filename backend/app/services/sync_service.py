@@ -145,7 +145,15 @@ def sync_all(session: Session) -> dict:
                     """), {"id": mid, "h": int(sh), "a": int(sa)})
                     summary["results_added"] += 1
 
-    _last_status["last_sync"] = datetime.now(timezone.utc).replace(tzinfo=None).isoformat() + "Z"
+    now_iso = datetime.now(timezone.utc).replace(tzinfo=None).isoformat() + "Z"
+    _last_status["last_sync"] = now_iso
+    # zusätzlich in der DB persistieren (überlebt Backend-Neustarts)
+    from app.models.appstate import AppState
+    st = session.get(AppState, "last_sync")
+    if st:
+        st.value = now_iso
+    else:
+        session.add(AppState(key="last_sync", value=now_iso))
     session.commit()
     summary["unmapped"] = sorted(set(summary["unmapped"]))
     return {**summary, **_last_status}
