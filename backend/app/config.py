@@ -50,6 +50,17 @@ class Settings(BaseSettings):
     odds_api_base: str = "https://api.the-odds-api.com/v4"
     odds_cache_ttl: int = 900
 
+    # ── Markt-Kalibrierung (offizielle Prognose = Modell ⊕ Markt) ─────────────
+    # Log-Opinion-Pool-Gewicht des Marktes. Reines Modell bleibt für die Betting
+    # Engine erhalten (Edge/EV unverändert); nur die OFFIZIELLE Prognose wird kalibriert.
+    odds_blend_weight: float = 0.35
+    # Vertrauen-Stufen aus der max-WS der kalibrierten W/U/N
+    conf_high: float = 0.55
+    conf_mid: float = 0.42
+    # Modell-vs-Markt-Divergenz (Total Variation) → Übereinstimmungs-Buckets
+    div_confirm: float = 0.08
+    div_strong: float = 0.18
+
 
 settings = Settings()
 

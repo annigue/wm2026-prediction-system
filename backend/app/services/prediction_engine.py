@@ -131,6 +131,26 @@ async def predict_match(match_id: str, db: AsyncSession, model_version: str = "v
         "factors": factors,
     }
 
+    # Offizielle, markt-kalibrierte Prognose (Variante D + log-Blend).
+    # Das reine Modell (result.* / top-level prob_*) bleibt für die Betting Engine unverändert.
+    market_probs = None
+    try:
+        from app.services.odds_aggregator import get_market_probabilities
+        mkt = get_market_probabilities(home.home_country or home.name,
+                                       away.home_country or away.name)
+        if mkt and mkt.get("fair_1x2"):
+            f = mkt["fair_1x2"]
+            market_probs = [f["home"], f["draw"], f["away"]]
+    except Exception:
+        market_probs = None  # Markt best-effort: darf die Prognose nie brechen
+
+    from app.services.forecast_service import build_official_forecast
+    explanation["official"] = build_official_forecast(
+        [result.prob_home_win, result.prob_draw, result.prob_away_win],
+        result.score_distribution,
+        market_probs,
+    )
+
     existing = next((p for p in match.predictions if p.model_version == model_version), None)
     pred = existing or MatchPrediction(match_id=match_id, model_version=model_version)
     if existing is None:

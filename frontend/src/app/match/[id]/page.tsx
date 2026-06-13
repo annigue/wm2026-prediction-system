@@ -4,7 +4,7 @@ import { ScoreHeatmap } from "@/components/ui/ScoreHeatmap";
 import { FactorExplanation } from "@/components/ui/FactorExplanation";
 import { BettingPanel } from "@/components/BettingPanel";
 import { TipPanel } from "@/components/TipPanel";
-import { computeTips, outcomeColor, outcomeBg, evaluateTip, evalColor } from "@/lib/tips";
+import { computeTips, officialForecast, outcomeColor, outcomeBg, evaluateTip, evalColor } from "@/lib/tips";
 import Link from "next/link";
 
 function fmt(iso?: string) {
@@ -138,63 +138,78 @@ export default async function MatchPage({ params }: { params: { id: string } }) 
       })()}
 
       {pred && match.status !== "FINISHED" && (() => {
-        const { xgTip, modelTip } = computeTips(pred);
+        const off = officialForecast(pred);
+        const outName = off.outcome === "home" ? match.home_team?.name
+          : off.outcome === "away" ? match.away_team?.name : null;
+        const headline = off.outcome === "draw" ? "Unentschieden wahrscheinlich"
+          : `${outName} gewinnt`;
+        const dots = off.confidence.level === "hoch" ? "●●●"
+          : off.confidence.level === "mittel" ? "●●○" : "●○○";
+        const mk = off.market;
+        const mkText = !mk.available ? null
+          : mk.agreement === "bestaetigt" ? "✓ Modell bestätigt Markt"
+          : mk.agreement === "leicht" ? "Modell weicht leicht vom Markt ab"
+          : "⚠ Modell weicht stark vom Markt ab — evtl. kennt der Markt Aufstellung/Verletzung";
+        const wun = [
+          ["home", match.home_team?.short_name, off.probs.home],
+          ["draw", "Remis", off.probs.draw],
+          ["away", match.away_team?.short_name, off.probs.away],
+        ] as const;
         return (
-          <div className={`card border ${outcomeBg(xgTip.outcome)} space-y-3`}>
+          <div className={`card border ${outcomeBg(off.outcome)} space-y-4`}>
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-white">🎯 Modell-Tipp</h3>
-              <Link href="/tipps" className="text-xs text-wm-muted hover:text-white">
-                Alle Tipps →
-              </Link>
+              <h3 className="text-sm font-semibold text-white">Offizielle Prognose</h3>
+              <span className="text-xs text-wm-muted">Vertrauen <span className="tracking-tight">{dots}</span> {off.confidence.level}</span>
             </div>
-            <div className="flex items-center gap-6 flex-wrap">
-              {/* xG-Tipp */}
-              <div className="text-center">
-                <div className={`text-4xl font-black ${outcomeColor(xgTip.outcome)}`}>
-                  {xgTip.score}
-                </div>
-                <div className="text-xs text-wm-muted mt-1">xG-Tipp</div>
-                <div className="text-xs text-wm-muted">{xgTip.label}</div>
+
+            <div className="text-center">
+              <div className={`text-5xl font-black ${outcomeColor(off.outcome)}`}>{off.score}</div>
+              <div className="text-sm text-gray-200 mt-2">
+                {headline} · <span className="font-semibold">{(off.prob * 100).toFixed(0)}%</span>
               </div>
+            </div>
 
-              {/* Trennlinie */}
-              <div className="border-l border-wm-border h-12 hidden sm:block" />
-
-              {/* Wahrscheinlichstes Ergebnis */}
-              {modelTip && (
-                <div className="text-center">
-                  <div className={`text-2xl font-bold ${outcomeColor(modelTip.outcome)}`}>
-                    {modelTip.score}
-                  </div>
-                  <div className="text-xs text-wm-muted mt-1">wahrscheinlichstes Ergebnis</div>
+            <div className="grid grid-cols-3 gap-2 text-center text-xs">
+              {wun.map(([k, lbl, p]) => (
+                <div key={k} className={`rounded-lg py-1.5 ${off.outcome === k ? "bg-white/10" : ""}`}>
+                  <div className={`text-base font-bold ${outcomeColor(k)}`}>{(p * 100).toFixed(0)}%</div>
+                  <div className="text-wm-muted">{lbl}</div>
                 </div>
-              )}
+              ))}
+            </div>
 
-              {/* Outcome-Text */}
-              <div className="flex-1 text-sm text-gray-300">
-                {xgTip.outcome === "home" && (
-                  <><span className="font-bold text-blue-400">{match.home_team?.name}</span> gewinnt (Heimsieg)</>
-                )}
-                {xgTip.outcome === "away" && (
-                  <><span className="font-bold text-red-400">{match.away_team?.name}</span> gewinnt (Auswärtssieg)</>
-                )}
-                {xgTip.outcome === "draw" && (
-                  <span className="font-bold text-yellow-400">Unentschieden</span>
-                )}
-                <div className="text-xs text-wm-muted mt-1">
-                  Sieg {match.home_team?.short_name} {(pred.prob_home_win * 100).toFixed(0)}% ·
-                  Unentschieden {(pred.prob_draw * 100).toFixed(0)}% ·
-                  Sieg {match.away_team?.short_name} {(pred.prob_away_win * 100).toFixed(0)}%
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+              <div>
+                <div className="text-xs text-wm-muted mb-1">Erwartete Tore (xG)</div>
+                <div className="font-mono font-bold text-white">{off.xg.home} : {off.xg.away}</div>
+              </div>
+              <div>
+                <div className="text-xs text-wm-muted mb-1">Wahrscheinlichste Ergebnisse</div>
+                <div className="font-mono text-gray-300">
+                  {off.top_scorelines.map((s) => `${s.score} (${(s.prob * 100).toFixed(0)}%)`).join(" · ")}
                 </div>
               </div>
             </div>
+            <p className="text-[11px] text-wm-muted">
+              ⓘ „Erwartete Tore" ist ein Mittelwert; das wahrscheinlichste Einzelergebnis kann knapper oder
+              unentschieden ausfallen, auch wenn ein Team favorisiert ist.
+            </p>
+
+            {mkText && (
+              <div className="text-xs text-wm-muted border-t border-wm-border pt-2">
+                Marktvergleich: <span className="text-gray-300">{mkText}</span>
+                <span className="opacity-60"> · Markt einbezogen (w={(mk.weight * 100).toFixed(0)}%)</span>
+              </div>
+            )}
           </div>
         );
       })()}
 
       {pred && (
         <>
-          {/* Expected Goals + Top Scorelines */}
+          {/* Expected Goals + Top Scorelines — nur für beendete Spiele;
+              bei offenen Spielen steckt das in der offiziellen Prognose oben. */}
+          {match.status === "FINISHED" && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="card space-y-3">
               <h3 className="text-sm font-semibold text-white">Expected Goals (xG)</h3>
@@ -233,6 +248,7 @@ export default async function MatchPage({ params }: { params: { id: string } }) 
               ))}
             </div>
           </div>
+          )}
 
           {/* Tippspiel-Empfehlung (Expected-Points-optimal) */}
           {match.status !== "FINISHED" && <TipPanel matchId={match.id} />}

@@ -1,4 +1,62 @@
-import type { PredictionSummary } from "@/types";
+import type { PredictionSummary, PredictionDetail } from "@/types";
+
+export type Outcome = "home" | "draw" | "away";
+
+export interface OfficialForecast {
+  outcome: Outcome;
+  score: string;
+  prob: number;
+  probs: { home: number; draw: number; away: number };
+  xg: { home: number; away: number };
+  top_scorelines: { score: string; prob: number }[];
+  confidence: { level: string; decisiveness: number };
+  market: {
+    available: boolean;
+    weight: number;
+    fair_1x2: { home: number; draw: number; away: number } | null;
+    divergence: number | null;
+    agreement: string;
+  };
+}
+
+function condMode(dist: Record<string, number>, outcome: Outcome): string | null {
+  const sign = outcome === "home" ? 1 : outcome === "away" ? -1 : 0;
+  let best: string | null = null;
+  let bestP = -1;
+  for (const [k, p] of Object.entries(dist)) {
+    const [i, j] = k.split(":").map(Number);
+    const r = i > j ? 1 : i < j ? -1 : 0;
+    if (r === sign && p > bestP) { bestP = p; best = k; }
+  }
+  return best;
+}
+
+/**
+ * Offizielle (markt-kalibrierte) Prognose. Nutzt explanation.official aus dem Backend;
+ * fällt für alte Prognosen ohne dieses Feld sauber auf das reine Modell zurück.
+ */
+export function officialForecast(pred: PredictionDetail): OfficialForecast {
+  const o = pred.explanation?.official;
+  if (o) return o as OfficialForecast;
+
+  const probs = { home: pred.prob_home_win, draw: pred.prob_draw, away: pred.prob_away_win };
+  const outcome: Outcome =
+    probs.home >= probs.draw && probs.home >= probs.away ? "home"
+      : probs.away >= probs.draw ? "away" : "draw";
+  const d = Math.max(probs.home, probs.draw, probs.away);
+  const level = d >= 0.55 ? "hoch" : d >= 0.42 ? "mittel" : "niedrig";
+  const score =
+    (pred.score_distribution && condMode(pred.score_distribution, outcome)) ||
+    pred.top_scoreline ||
+    `${Math.round(pred.xg_home)}:${Math.round(pred.xg_away)}`;
+  return {
+    outcome, score, prob: d, probs,
+    xg: { home: pred.xg_home, away: pred.xg_away },
+    top_scorelines: pred.top_scorelines ?? [],
+    confidence: { level, decisiveness: d },
+    market: { available: false, weight: 0, fair_1x2: null, divergence: null, agreement: "kein_markt" },
+  };
+}
 
 export interface Tip {
   score: string;        // z.B. "2:1"
