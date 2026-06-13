@@ -23,16 +23,20 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS-Origins env-getrieben (Prod: Frontend-Domain via CORS_ORIGINS, kommagetrennt).
+# CORS-Origins: explizite Liste (env CORS_ORIGINS) + Default inkl. Prod-Frontend.
+# allow_origin_regex erlaubt zusätzlich JEDE *.vercel.app-Domain (Production + Previews),
+# damit Browser-Aufrufe (Admin, StatusBar) nicht an einer falsch gesetzten Env-Var scheitern.
 _cors_origins = [
     o.strip() for o in os.getenv(
-        "CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000"
+        "CORS_ORIGINS",
+        "http://localhost:3000,http://127.0.0.1:3000,https://wm2026-prediction-system.vercel.app",
     ).split(",") if o.strip()
 ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
