@@ -203,7 +203,6 @@ def _after_result_tasks(match_id: str):
     import asyncio
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
-    from app.database import AsyncSessionLocal
     from app.services.prediction_engine import predict_all_scheduled
     from app.services.form_engine import update_all_forms
     from app.services.knockout_resolver import resolve_bracket
@@ -217,9 +216,16 @@ def _after_result_tasks(match_id: str):
     sync_engine.dispose()
 
     async def _run():
-        async with AsyncSessionLocal() as db:
-            await predict_all_scheduled(db)
-            await db.commit()
+        # FRISCHE Engine im neuen Loop: die App-AsyncSessionLocal ist an den Haupt-Event-Loop
+        # gebunden → im Background-Thread "Future attached to a different loop".
+        from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+        engine = create_async_engine(settings.database_url)
+        try:
+            async with async_sessionmaker(engine, expire_on_commit=False)() as db:
+                await predict_all_scheduled(db)
+                await db.commit()
+        finally:
+            await engine.dispose()
     asyncio.run(_run())
 
     from app.services.cache import invalidate
