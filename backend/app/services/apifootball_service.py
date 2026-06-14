@@ -21,6 +21,7 @@ FINISHED = {"FT", "AET", "PEN"}
 _ALIAS = {
     "united states": "usa", "south korea": "korea republic", "ivory coast": "cote divoire",
     "czechia": "czech republic", "cape verde": "cabo verde", "turkiye": "turkey",
+    "congo dr": "dr congo",
 }
 
 
@@ -96,5 +97,15 @@ def sync_results(session: Session) -> dict:
                 source="apifootball"))
             summary["results_added"] += 1
         session.execute(text("UPDATE matches SET status='FINISHED' WHERE id=:id"), {"id": mid})
+
+    # Sicherheitsnetz: nicht zuordenbare BEENDETE Spiele sichtbar machen (sonst still übersprungen).
+    # Wird in app_state persistiert und in /admin/status + Admin-UI als Warnung angezeigt.
+    from app.models.appstate import AppState
+    val = "; ".join(summary["unmapped"])
+    row = session.get(AppState, "last_unmapped")
+    if row:
+        row.value = val
+    else:
+        session.add(AppState(key="last_unmapped", value=val))
 
     return summary

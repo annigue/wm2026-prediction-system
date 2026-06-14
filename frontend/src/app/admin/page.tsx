@@ -13,11 +13,23 @@ export default function AdminPage() {
   const [show, setShow] = useState(false);
   const [cal, setCal] = useState<any>(null);
   const [calBusy, setCalBusy] = useState(false);
+  const [unmapped, setUnmapped] = useState<string[]>([]);
 
   useEffect(() => {
     setToken(localStorage.getItem("wm2026_admin_token") ?? "");
     loadCal();
+    loadStatus();
   }, []);
+
+  async function loadStatus() {
+    try {
+      const r = await fetch(`${API}/api/v1/admin/status`);
+      const d = r.ok ? await r.json() : null;
+      setUnmapped(Array.isArray(d?.unmapped) ? d.unmapped : []);
+    } catch {
+      setUnmapped([]);
+    }
+  }
 
   async function loadCal() {
     setCalBusy(true);
@@ -67,6 +79,7 @@ export default function AdminPage() {
             : "keine neuen Ergebnisse"
         );
         setMsg({ ok: true, text: "Synchronisiert · " + parts.join(" · ") });
+        loadStatus(); // Unmapped-Warnung aktualisieren
       } else {
         setMsg({ ok: true, text: "Simulation gestartet — Ergebnis in ~1–2 min sichtbar." });
       }
@@ -88,6 +101,23 @@ export default function AdminPage() {
           Manuelles Auslösen von Daten-Sync &amp; Simulation. Läuft sonst automatisch alle 30 min.
         </p>
       </div>
+
+      {unmapped.length > 0 && (
+        <div className="card text-sm border border-amber-600/50 text-amber-300 space-y-1">
+          <div className="font-semibold">
+            ⚠️ {unmapped.length} beendete(s) Spiel(e) nicht zugeordnet
+          </div>
+          <p className="text-[12px] text-amber-200/80">
+            Die Ergebnis-API liefert einen Teamnamen, den das System nicht zuordnen konnte — diese
+            Spiele werden NICHT synchronisiert. Bitte Alias im Backend ergänzen:
+          </p>
+          <ul className="list-disc list-inside font-mono text-[12px]">
+            {unmapped.map((u) => (
+              <li key={u}>{u}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="card space-y-2">
         <div className="flex items-center justify-between">

@@ -24,6 +24,9 @@ async def sync_status(db: AsyncSession = Depends(get_db)):
     row = await db.get(AppState, "last_sync")
     if row:
         s["last_sync"] = row.value  # persistierter Wert überlebt Neustarts
+    um = await db.get(AppState, "last_unmapped")
+    # Warnung: beendete Spiele, die die API nicht unseren Teams zuordnen konnte.
+    s["unmapped"] = [x for x in (um.value.split("; ") if um and um.value else []) if x]
     return s
 
 
