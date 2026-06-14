@@ -60,10 +60,29 @@ export function officialForecast(pred: PredictionDetail): OfficialForecast {
 
 export interface Tip {
   score: string;        // z.B. "2:1"
-  method: "xg" | "top_scoreline";
+  method: "xg" | "top_scoreline" | "official";
   label: string;        // Erklärung
   outcome: "home" | "draw" | "away";
   confidence?: number;  // Wahrscheinlichkeit dieses genauen Ergebnisses
+}
+
+/**
+ * DER empfohlene Tipp = die offizielle (markt-kalibrierte) Prognose — identisch zu dem,
+ * was die Match-Detailseite zeigt. Fällt für alte Prognosen ohne `official` auf den xG-Tipp zurück.
+ * So zeigen Tipps-Seite und Spiel-Detail garantiert dieselbe EINE Prognose.
+ */
+export function recommendedTip(pred: PredictionSummary): Tip {
+  const o = pred.official;
+  if (o && o.score && o.outcome) {
+    return {
+      score: o.score,
+      method: "official",
+      label: "offizielle Prognose",
+      outcome: o.outcome,
+      confidence: o.prob,
+    };
+  }
+  return computeTips(pred).xgTip;
 }
 
 /**

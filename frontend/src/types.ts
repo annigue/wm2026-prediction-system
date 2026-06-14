@@ -64,6 +64,12 @@ export interface PredictionSummary {
   xg_away: number;
   model_version?: string | null;
   top_scoreline?: string | null;
+  official?: {
+    outcome: "home" | "draw" | "away";
+    score: string;
+    prob: number;
+    [k: string]: any;
+  } | null;
 }
 
 export interface PredictionDetail extends PredictionSummary {

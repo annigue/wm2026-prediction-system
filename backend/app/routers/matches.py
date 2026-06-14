@@ -40,10 +40,11 @@ def _pred_summary(pred) -> Optional[PredictionSummary]:
     if not pred:
         return None
     top = pred.top_scorelines[0]["score"] if pred.top_scorelines else None
+    official = (pred.explanation or {}).get("official") if pred.explanation else None
     return PredictionSummary(
         prob_home_win=pred.prob_home_win, prob_draw=pred.prob_draw,
         prob_away_win=pred.prob_away_win, xg_home=pred.xg_home, xg_away=pred.xg_away,
-        model_version=pred.model_version, top_scoreline=top,
+        model_version=pred.model_version, top_scoreline=top, official=official,
     )
 
 
@@ -63,10 +64,11 @@ def _team_trim(rel):
     return selectinload(rel).options(noload(Team.elo_history), noload(Team.groups))
 
 # Liste: nur die Summary-Spalten der Prognose (kein score_distribution/explanation/snapshots).
+# explanation (~1.5 KB) für die offizielle Prognose; score_distribution (Heatmap) bleibt ausgeschlossen.
 _PRED_SUMMARY_COLS = (
     MatchPrediction.prob_home_win, MatchPrediction.prob_draw, MatchPrediction.prob_away_win,
     MatchPrediction.xg_home, MatchPrediction.xg_away, MatchPrediction.top_scorelines,
-    MatchPrediction.model_version, MatchPrediction.predicted_at,
+    MatchPrediction.model_version, MatchPrediction.predicted_at, MatchPrediction.explanation,
 )
 
 _LIST_OPTS = [

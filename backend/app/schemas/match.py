@@ -20,6 +20,9 @@ class PredictionSummary(BaseModel):
     xg_away: float
     model_version: Optional[str] = None
     top_scoreline: Optional[str] = None
+    # Offizielle (markt-kalibrierte) Prognose, damit Listen/Tipps dieselbe EINE Prognose
+    # zeigen wie die Detailseite (sonst weicht der xG-gerundete Tipp ab).
+    official: Optional[dict[str, Any]] = None
 
 
 class PredictionDetail(PredictionSummary):
