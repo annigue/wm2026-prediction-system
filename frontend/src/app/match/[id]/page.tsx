@@ -31,9 +31,21 @@ export default async function MatchPage({ params }: { params: { id: string } }) 
   let match: any = null;
   try {
     match = await api.match(params.id);
-  } catch {
-    return (
+  } catch (e) {
+    // Echtes 404 (Spiel existiert nicht) von einem vorübergehenden Fehler unterscheiden
+    // (Render-Free-Kaltstart/Timeout/Deploy-Fenster) — sonst wirkt ein existierendes Spiel
+    // fälschlich als „nicht gefunden".
+    const notFound = e instanceof Error && /→ 404/.test(e.message);
+    return notFound ? (
       <div className="card text-red-400">Spiel nicht gefunden: {params.id}</div>
+    ) : (
+      <div className="card text-amber-300 space-y-1">
+        <div className="font-semibold">⏳ Spiel vorübergehend nicht erreichbar</div>
+        <p className="text-sm text-amber-200/80">
+          Das Backend war kurz nicht verfügbar (Free-Tier-Kaltstart). Bitte die Seite in ein
+          paar Sekunden neu laden.
+        </p>
+      </div>
     );
   }
 
