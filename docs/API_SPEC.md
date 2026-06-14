@@ -57,5 +57,7 @@ Antworten als JSON. Admin-Endpunkte erfordern Header `Authorization: <ADMIN_TOKE
 - **TeamSummary**: id, name, short_name, flag_emoji, confederation, elo_rating, fifa_ranking,
   market_value_millions, avg_squad_age, form_score, champion_probability.
 - **PredictionSummary/Detail**: prob_home_win/draw/away_win, xg_home/away, top_scoreline,
-  (+ top_scorelines, score_distribution, explanation).
+  (+ top_scorelines, score_distribution, explanation). `explanation` enthält u. a. `official`
+  (markt-kalibrierte Prognose: outcome, score, probs, confidence, market) und `attack_defense`
+  (γ + attack/defense je Team), sofern `ad_gamma>0`.
 - **MatchSummary**: id, stage, group_id, home_team, away_team, kickoff_utc, status, prediction, result.

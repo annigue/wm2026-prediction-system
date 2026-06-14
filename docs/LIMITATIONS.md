@@ -9,7 +9,7 @@ Schätzwert. Keine ML-Modelle, keine erfundenen Daten.
 | Form | form_engine v2 (Punkte+Tore+Recency, echte Ergebnisse) | vor 1. Spiel = 0.0 (neutral) |
 | Rest-Days/Fatigue | nur **gespielte** Spiele, sanfte tanh-Sättigung (±20) | greift erst während des Turniers; Gruppenphase weitgehend symmetrisch |
 | Umwelt-/Venue-Stress | nur **Varianz** in der Simulation (Höhe+Klima-Proxy) | grober Proxy (Breitengrad statt echter Klimadaten); kein Bias, kein Forecast |
-| Marktwert | statischer PRIOR, eingefroren | Importance 6× < Elo; nicht automatisiert (bewusst) |
+| Attack-/Defense-Ratings | relative Tor-/Gegentor-Rate aus Ergebnis-Historie, recency+Shrinkage, gedämpft (`γ`=0.5) | Elo bleibt dominant; kleine Stichprobe → Shrinkage zu 1.0; nur so frisch wie der letzte Historie-Import |
 
 ## Verbleibende, NICHT modellierte Faktoren
 | Thema | Impact | Mitigation |

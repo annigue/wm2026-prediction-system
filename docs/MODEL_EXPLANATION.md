@@ -28,8 +28,10 @@ Wichtig: Diese Faktoren **verschieben** die Prognose nur leicht (im Schnitt ~2 P
 die **Elo-Stärke dominiert**. Das ist Absicht und durch Tests belegt.
 
 ## Tore & Ergebnisse
-Aus den erwarteten Toren erzeugt ein bewährtes statistisches Tormodell (**Poisson** mit
-**Dixon-Coles-Korrektur** für knappe Ergebnisse wie 1:0/1:1) die Wahrscheinlichkeit jedes
+Die erwarteten Tore kommen aus der Elo-Stärke, zusätzlich fein justiert durch **Attack-/Defense-
+Ratings** (wie viele Tore ein Team zuletzt erzielt/kassiert hat — aus echten Ergebnissen,
+gedämpft, Elo bleibt dominant). Daraus erzeugt ein bewährtes statistisches Tormodell (**Poisson**
+mit **Dixon-Coles-Korrektur** für knappe Ergebnisse wie 1:0/1:1) die Wahrscheinlichkeit jedes
 Spielstands. Daraus kommen die Balken „Heimsieg/Unentschieden/Auswärtssieg" und die Heatmap.
 
 ## Der Tipp

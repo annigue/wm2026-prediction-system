@@ -39,7 +39,8 @@ Faktoren < Schwellwert (Höhe/Reise/Rest) werden weggelassen, damit nur relevant
 
 ## Schritt 5 — Poisson + Dixon-Coles
 ```
-λ_home = 1.30·exp(adjΔ/800) ; λ_away = 1.30·exp(−adjΔ/800)   (clip 0.25–5.0)
+λ_home = 1.30·exp(adjΔ/800)·(Atk_h·Def_a)^γ ; λ_away = 1.30·exp(−adjΔ/800)·(Atk_a·Def_h)^γ  (clip 0.25–5.0)
+# γ = ad_gamma (Default 0.5); Attack/Defense aus historischen Ergebnissen, Elo dominant, γ=0 ⇒ reines Elo
 P(i:j) = Poisson(i;λh)·Poisson(j;λa)·τ(i,j)   i,j∈0..8 → normiert
 P(Heim)=Σ_{i>j} · P(X)=Σ_{i=j} · P(Ausw)=Rest
 xG = λ_home/λ_away ; top_scorelines = Top-5 nach Wahrscheinlichkeit

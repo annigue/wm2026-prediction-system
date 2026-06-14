@@ -25,6 +25,7 @@ Alles basiert auf **Daten und nachvollziehbaren Formeln** — keine Bauchgefühl
 | **Spielplan, Anstoßzeiten, Ergebnisse** | offizielle WM-API (live) | **echt**, live |
 | **Stadien + Höhenlage/Koordinaten** | offizieller FIFA-Spielplan + Geodaten | **echt** |
 | **Form** | aus echten Ergebnissen berechnet | **echt** (ab 1. Spieltag) |
+| **Attack-/Defense-Ratings** | historische Länderspiel-Ergebnisse (nur Tore) | **echt**, datengetrieben |
 | **Marktquoten** | the-odds-api (Buchmacher) | **echt**, kalibriert die offizielle Prognose |
 | Marktwert, FIFA-Ranking, Alter, Caps | — | **entfernt**, *fließen NICHT ins Modell* |
 
@@ -85,7 +86,9 @@ Bezeichnungen; das Modell rechnet **symmetrisch**. Echten Heimvorteil gibt es nu
 **Gastgeber** im eigenen Land.
 
 ### Schritt 3 — Vom Stärkewert zu Toren (Poisson + Dixon-Coles)
-Aus der angepassten Elo-Differenz werden die **erwarteten Tore** jedes Teams (xG). Ein bewährtes
+Aus der angepassten Elo-Differenz werden die **erwarteten Tore** jedes Teams (xG) — zusätzlich
+fein justiert durch **Attack-/Defense-Ratings** (relative Tor-/Gegentor-Stärke aus der
+Ergebnis-Historie, gedämpft per `γ`; Elo bleibt dominant). Ein bewährtes
 statistisches Tormodell (**Poisson**) verteilt daraus die Wahrscheinlichkeit **jedes Spielstands**
 (0:0, 1:0, 2:1 …). Eine **Dixon-Coles-Korrektur** justiert die häufigen knappen Ergebnisse
 (0:0, 1:0, 1:1) realistischer. Aufsummiert ergibt das die Balken **Sieg / Unentschieden / Niederlage**

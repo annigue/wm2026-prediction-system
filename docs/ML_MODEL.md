@@ -84,11 +84,18 @@ der gerichtete Höheneffekt lebt in Layer 2a; kein Double-Counting (verschiedene
 ## Layer 3 — Poisson Goal Model (`poisson_model.py`)
 
 ```
-λ_home = 1.30 · exp(elo_diff/800)        λ_away = 1.30 · exp(−elo_diff/800)   (clip 0.25–5.0)
+λ_home = 1.30 · exp(elo_diff/800) · (Attack_home·Defense_away)^γ   (clip 0.25–5.0)
+λ_away = 1.30 · exp(−elo_diff/800) · (Attack_away·Defense_home)^γ
 P(i:j) = Poisson(i;λ_h) · Poisson(j;λ_a) · τ(i,j)    Grid 0..8, dann normiert
 Dixon-Coles τ (ρ=−0.13):  0:0→1−λhλaρ · 1:0→1+λaρ · 0:1→1+λhρ · 1:1→1−ρ · sonst 1
 P(Heim)=Σ_{i>j}  P(X)=Σ_{i=j}  P(Ausw)=1−P(Heim)−P(X)
 ```
+
+**Attack/Defense (`attack_defense_service.py`):** relative Tor-/Gegentor-Raten je Team aus
+historischen Ergebnissen (`international_results`), recency-gewichtet + Shrinkage zum Neutralwert
+1.0. Elo bleibt dominanter Hebel; `γ` (Config `ad_gamma`, Default 0.5) dämpft den Einfluss.
+Backtest 9360 Spiele: LogLoss 0.958→0.937, Brier 0.568→0.555, ECE 0.097→0.050 (alle besser).
+`γ=0` ⇒ identisch zum reinen Elo-Modell.
 
 ## Monte-Carlo-Simulation (`tournament_simulator.py`)
 
