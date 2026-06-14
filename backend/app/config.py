@@ -61,6 +61,17 @@ class Settings(BaseSettings):
     div_confirm: float = 0.08
     div_strong: float = 0.18
 
+    # ── Attack-/Defense-Ratings (aus historischen Ergebnissen) ────────────────
+    # Relativ zum Tor-Schnitt, recency-gewichtet + Shrinkage zum Neutralwert 1.0.
+    ad_window: int = 20          # letzte N Spiele je Team
+    ad_decay: float = 0.90       # Recency: weight_i = decay^i
+    ad_shrinkage_k: float = 8.0  # Pseudo-Spiele Richtung Neutralwert (kleine Stichprobe)
+    ad_clamp_lo: float = 0.65    # Clamp gegen Ausreißer
+    ad_clamp_hi: float = 1.55
+    # Dämpfung des Attack/Defense-Einflusses aufs λ: (Attack·Defense)^ad_gamma.
+    # 0.0 = AUS (identisch zum reinen Elo-Modell) — erst nach bestandener Evaluation > 0 setzen.
+    ad_gamma: float = 0.0
+
 
 settings = Settings()
 
