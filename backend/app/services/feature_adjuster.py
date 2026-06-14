@@ -1,18 +1,16 @@
 """Feature Adjustment Layer: 4 kontextuelle Faktoren als Elo-Delta.
 
-Datenqualitäts-Härtung (2026-06-06):
-  Reduziert von 7 → 4 Faktoren. Entfernt wurden:
-    - Durchschnittsalter (age)  — Seed-Schätzung, Importance ≪ Elo, kein Kalibriergewinn
-    - Erfahrung (caps)          — Seed-Schätzung, Importance ≪ Elo, kein Kalibriergewinn
-    - FIFA-Ranking              — bereits zuvor entfernt (nur noch Elo-Init-Prior)
+Entfernt (Seed-/Schätzwerte ohne Kalibriergewinn bzw. ohne echte Quelle):
+    - Durchschnittsalter (age), Erfahrung (caps) — Seed-Schätzungen, Importance ≪ Elo
+    - FIFA-Ranking — nur noch Elo-Init-Prior
+    - Marktwert (2026-06-14) — schwacher, geschätzter Proxy, überschneidet sich mit Elo;
+      keine aktuelle echte Quelle verfügbar (Transfermarkt-Scraping unzulässig)
 
 Faktoren (alle deterministisch / faktisch / reproduzierbar):
-    1. Form       — aus echten Ergebnissen (form_engine, Single Source of Truth)
-    2. Marktwert  — statischer PRIOR (Transfermarkt), klar gelabelt, eingefroren
-    3. Höhe       — Geodaten (Venue + Heimat), faktisch
-    4. Reise      — Geopy great_circle, berechnet
-    5. Erholung   — Rest-Days/Fatigue aus dem Spielplan (kickoff_utc), berechnet
-                    (Hardening 2026-06-06; reproduzierbar, keine externen Daten)
+    1. Form     — aus echten Ergebnissen (form_engine, Single Source of Truth)
+    2. Höhe     — Geodaten (Venue + Heimat), faktisch
+    3. Reise    — Geopy great_circle, berechnet
+    4. Erholung — Rest-Days/Fatigue aus dem Spielplan (kickoff_utc), berechnet
 """
 
 import math
@@ -56,7 +54,6 @@ class FeatureAdjuster:
     # Max. Beitrag pro Feature in Elo-Punkten
     CAPS = {
         "form":     60,
-        "market":   50,
         "altitude": 80,
         "travel":   30,
         "rest":     20,
@@ -84,16 +81,11 @@ class FeatureAdjuster:
             elo_delta=round(d, 1), weight=0.15,
         ))
 
-        # ── 2. Marktwert ──────────────────────────────────────────────────────
-        mvh = getattr(home_feat, "market_value_millions", None) or 200.0
-        mva = getattr(away_feat, "market_value_millions", None) or 200.0
-        ratio = max(mvh, 1.0) / max(mva, 1.0)
-        d = self._cap(math.log10(ratio) * 45, "market")
-        factors.append(Factor(
-            name="Marktwert",
-            description=f"Heim {mvh:.0f}M€ — Auswärts {mva:.0f}M€",
-            elo_delta=round(d, 1), weight=0.10,
-        ))
+        # ── 2. Marktwert: ENTFERNT (2026-06-14) ───────────────────────────────
+        # War ein schwacher, geschätzter Proxy (manuell gepflegt, ~statisch), der sich
+        # stark mit Elo überschneidet — Kaderstärke ist bereits im Elo enthalten. Keine
+        # echte aktuelle Quelle verfügbar (Transfermarkt-Scraping unzulässig), daher raus.
+        # DB-Spalte market_value_millions bleibt bestehen, fließt aber NICHT mehr ein.
 
         # ── 3. Höhenunterschied ───────────────────────────────────────────────
         if venue:

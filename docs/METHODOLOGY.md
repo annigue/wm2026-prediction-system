@@ -24,12 +24,14 @@ Alles basiert auf **Daten und nachvollziehbaren Formeln** — keine Bauchgefühl
 | **Stärke jedes Teams (Elo)** | eloratings.net (etablierte Welt-Rangliste) | **echt**, extern |
 | **Spielplan, Anstoßzeiten, Ergebnisse** | offizielle WM-API (live) | **echt**, live |
 | **Stadien + Höhenlage/Koordinaten** | offizieller FIFA-Spielplan + Geodaten | **echt** |
-| **Marktwert (Kader-Gesamtwert)** | einmalig eingepflegt | **Schätzung**, eingefroren |
 | **Form** | aus echten Ergebnissen berechnet | **echt** (ab 1. Spieltag) |
-| FIFA-Ranking, Alter, Caps | Seed | **Schätzung**, *fließen NICHT ins Modell* |
+| **Marktquoten** | the-odds-api (Buchmacher) | **echt**, kalibriert die offizielle Prognose |
+| Marktwert, FIFA-Ranking, Alter, Caps | — | **entfernt**, *fließen NICHT ins Modell* |
 
-Kurz: Das, was die Prognose **trägt** (Elo, Spielplan, Ergebnisse, Stadien), ist echt. Der
-einzige aktiv genutzte Schätzwert ist der **Marktwert** — und der wirkt bewusst nur schwach.
+Kurz: Alle aktiv genutzten Eingangsdaten sind **echt** (Elo, Spielplan, Ergebnisse, Stadien,
+Form, Marktquoten). **Schätzwerte werden nicht mehr verwendet** — der Marktwert (zuvor der
+einzige) wurde am 14.06.2026 entfernt, weil er sich mit Elo überschneidet und keine aktuelle
+echte Quelle verfügbar ist (Transfermarkt-Scraping unzulässig).
 
 ---
 
@@ -72,7 +74,6 @@ Zur Elo-Differenz kommen begrenzte Zu-/Abschläge (in „Elo-Punkten", gedeckelt
 | Faktor | Was er misst | Datenbasis | max. Einfluss |
 |---|---|---|---|
 | **Form** | letzte Spiele (Punkte + Tore) | echte Ergebnisse | ±60 |
-| **Marktwert** | grobe Kaderqualität | Schätzung (statisch) | ±50 |
 | **Höhe** | Spielort-Höhe vs. Heimathöhe der Teams | Geodaten | ±80 |
 | **Reise** | Anreisedistanz zum Stadion | Geodaten | ±30 |
 | **Erholung** | Tage Pause seit letztem Spiel | Spielplan | ±20 |
