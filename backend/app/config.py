@@ -10,6 +10,11 @@ class Settings(BaseSettings):
     admin_token: str = "wm2026-admin-token"
 
     monte_carlo_runs: int = 100000
+    # Hinweis (Sensitivitäts-Backtest, scripts/evaluate_sensitivity.py): auf der Historie ist
+    # höheres K durchgängig besser (K=20 am schlechtesten, monoton bis K=60). Bewusst NICHT
+    # geändert — der Test isoliert keine Turnier-Bedingung (vorkalibrierte Start-Ratings, nur
+    # 3–7 Spiele) und "Elo bleibt unverändert". Anhebung (allg. 40 / Turnier 30) nur nach
+    # ausdrücklicher Freigabe + Live-Beobachtung im Kalibrierungs-Monitor. Via Env tunebar.
     elo_k_factor: float = 32.0
     elo_k_factor_tournament: float = 20.0
 
@@ -69,9 +74,10 @@ class Settings(BaseSettings):
     ad_clamp_lo: float = 0.65    # Clamp gegen Ausreißer
     ad_clamp_hi: float = 1.55
     # Dämpfung des Attack/Defense-Einflusses aufs λ: (Attack·Defense)^ad_gamma.
-    # Backtest (9360 Spiele): LogLoss/Brier/ECE minimieren bei ~0.7; konservativ 0.5 aktiviert
-    # (erfasst ~90 % des Gewinns, Elo bleibt dominant). Via AD_GAMMA-Env tunebar; 0.0 = aus.
-    ad_gamma: float = 0.5
+    # Sensitivitäts-Backtest (9360 Spiele, scripts/evaluate_sensitivity.py): LogLoss/Brier/ECE
+    # minimieren bei 0.7–0.85 (ECE 0.050→0.030); 0.5 war leicht zu konservativ. Auf 0.7 gesetzt —
+    # spürbar bessere Kalibrierung, Elo bleibt dominant. Via AD_GAMMA-Env tunebar; 0.0 = aus.
+    ad_gamma: float = 0.7
 
 
 settings = Settings()
