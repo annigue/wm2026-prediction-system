@@ -33,7 +33,7 @@ Update:     R_neu = R_alt + K · Tordiff-Gewicht · (Ergebnis − Erwartung)
 - **Initialwerte:** reproduzierbar aus **eloratings.net** (gleiche Formulierung, SCALE=400);
   Import via `scripts/import_initial_elo.py` → `data/initial_elo.json` (`data_source='eloratings_init'`).
   Beispiele: Spanien 2155, Argentinien 2113, Frankreich 2062, England 2020, Deutschland 1925.
-- **Live:** Bayesian Update beider Teams nach jedem Ergebnis (`bayesian_updater.py`, K=20),
+- **Live:** Elo-Update beider Teams nach jedem Ergebnis (`elo_updater.py`, K=20),
   Audit-Trail in `elo_ratings`. Elo ist die **alleinige dynamische Stärkemetrik**.
 
 ## Layer 2a — Feature Adjustment (`feature_adjuster.py`, Einzelspiel)

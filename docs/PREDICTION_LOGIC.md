@@ -56,7 +56,7 @@ xG = λ_home/λ_away ; top_scorelines = Top-5 nach Wahrscheinlichkeit
   KO-Spiele bekommen Teams → `predict_all` erzeugt Prognosen → erscheinen in /tipps.
 
 ## Auto-Update nach Ergebnis (`matches._after_result_tasks`)
-`Ergebnis → Elo (Bayesian) → Form (form_engine) → KO-Bracket (resolver) → predict_all →
+`Ergebnis → Elo → Form (form_engine) → KO-Bracket (resolver) → predict_all →
 Cache invalidieren → Simulation neu`. Der Recompute-Teil ist idempotent.
 
 ## Automatischer Ergebnis-Sync (`admin.auto_update`, CI alle 30 min)

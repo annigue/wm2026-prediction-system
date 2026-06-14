@@ -162,7 +162,7 @@ async def record_result(
     if (authorization or "").replace("Bearer ", "").strip() != settings.admin_token:
         raise HTTPException(status_code=401, detail="Ungültiges Admin-Token")
 
-    from app.services.bayesian_updater import apply_result
+    from app.services.elo_updater import apply_result
 
     q = await db.execute(select(Match).where(Match.id == match_id))
     match = q.scalar_one_or_none()

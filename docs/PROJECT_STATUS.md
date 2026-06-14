@@ -24,7 +24,7 @@ Details + Performance-Architektur: [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ## System (was läuft)
 
-- **Elo-Rating** (Init aus eloratings.net, live via Bayesian Update nach jedem Ergebnis)
+- **Elo-Rating** (Init aus eloratings.net, live via Elo-Update nach jedem Ergebnis)
 - **Poisson + Dixon-Coles** Tormodell → W/U/N + xG + Scoreline-Verteilung
 - **Feature Adjustment Layer** (5 Faktoren: Form, Markt, Höhe, Reise, Erholung — Höhe/Reise aktiv via Venue-Verknüpfung)
 - **Gastgeber-Heimvorteil** (USA/Kanada/Mexiko, Gruppenphase, tunebar)
@@ -75,7 +75,7 @@ Manuelles Eintragen via `POST /matches/{id}/result` bleibt als Fallback möglich
 | `services/tournament_simulator.py` | Monte Carlo (vektorisierte Gruppen + KO-Loop) |
 | `services/tournament_projection.py` | Deterministische Einzelprojektion + `rank_and_pair` |
 | `services/knockout_resolver.py` | KO-Teilnehmer aus realen Ergebnissen in DB schreiben |
-| `services/bayesian_updater.py` | Elo-Update beider Teams nach Ergebnis (K=20, inkrementell) |
+| `services/elo_updater.py` | Elo-Update beider Teams nach Ergebnis (K=20, inkrementell) |
 | `services/form_engine.py` | Form v2 (Punkte+Tore+Recency) — Single Source of Truth |
 | `services/betting_engine.py` / `decision_engine.py` | EV, Edge, NO_BET, Best/Safe/Value |
 | `services/odds_*` | Odds-Normalizer, Provider (Cache/Fallback), Aggregator, Calibration |

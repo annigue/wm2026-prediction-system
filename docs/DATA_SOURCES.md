@@ -29,7 +29,7 @@
   `python scripts/import_initial_elo.py --file data/eloratings_2026-06-06.txt --eloratings --write-db`
   → `data/initial_elo.json` + DB (`data_source='eloratings_init'`).
 - Gleiche Elo-Formulierung wie das Projekt (SCALE=400) → keine Umrechnung, **kein manuelles Tuning**.
-- Danach läuft Elo live über Bayesian Updates weiter.
+- Danach läuft Elo live über Elo-Updates weiter.
 
 ## Wettquoten — The Odds API (`odds_provider.py`)
 - Sportkey `soccer_fifa_world_cup`, Märkte `h2h,totals`, Region EU, Decimal.

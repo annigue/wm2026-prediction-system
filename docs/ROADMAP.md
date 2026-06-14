@@ -10,7 +10,7 @@
 | Elo + Poisson Modell | EloModel, PoissonModel + Dixon-Coles, FeatureAdjuster, PredictionEngine |
 | Turniersimulation | Monte Carlo (vektorisierte Gruppen + KO-Loop), Champion-/Runden-WS |
 | UI/Dashboard | Dashboard, Gruppen, Spiele, Match-Detail (Heatmap/Erklärung), Team, Tipps, Bracket |
-| Bayesian Updates | Elo-Update nach Ergebnis (K=20) + Hintergrund-Recompute |
+| Elo-Updates | Elo-Update nach Ergebnis (K=20) + Hintergrund-Recompute |
 | Context Injection | stochastische Simulations-Varianz (Form, Markt, KO-Druck) |
 | Betting Decision Engine | EV, Edge, Risiko, Best/Safe/Value Bets, Märkte |
 | Final Hardening | Form-Engine v2, Tipping-Engine (EV), Odds-Integration, Cache, Indizes |

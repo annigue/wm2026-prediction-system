@@ -50,7 +50,7 @@ async def auto_update(background_tasks: BackgroundTasks,
     """
     _check_token(authorization)
     from app.services.sync_service import sync_all
-    from app.services.bayesian_updater import apply_result
+    from app.services.elo_updater import apply_result
     from app.models.match import Match, MatchResult
     from app.models.team import EloRating
     from app.routers.matches import _after_result_tasks

@@ -3,7 +3,7 @@
 Kompakte Begründungen der wichtigsten Entscheidungen.
 
 ## ADR-001 — Elo als zentrale Stärkemetrik
-Bewährt, interpretierbar, online-lernfähig. Live via Bayesian Update; alleinige dynamische
+Bewährt, interpretierbar, online-lernfähig. Live via Elo-Update; alleinige dynamische
 Stärkequelle. *Alternative:* reine FIFA-Punkte (weniger prädiktiv) — verworfen.
 
 ## ADR-002 — Poisson + Dixon-Coles statt direktem WDL-Klassifikator
@@ -20,7 +20,7 @@ Einfluss ≈0) **entfernt**; FIFA nur Elo-Init; Rest-Days als reproduzierbarer F
 
 ## ADR-005 — Initial-Elo aus eloratings.net
 Reproduzierbar, gleiche Formulierung (SCALE=400), kein manuelles Tuning. Quelle committed;
-danach live via Bayesian.
+danach live via Elo-Update.
 
 ## ADR-006 — Form v2: Punkte + Tore + Recency, Single Source of Truth
 Datengetrieben aus echten Ergebnissen, keine Seed-Schätzung, deterministisch. Genau eine

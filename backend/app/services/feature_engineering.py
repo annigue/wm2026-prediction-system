@@ -46,7 +46,7 @@ FEATURE_CLASSIFICATION = {
         "update": "Einmalig (nur Elo-Init-Prior)", "before_wm": "Statisch",
     },
     "elo_rating": {
-        "type": "COMPUTED", "source": "Bayesian Update nach jedem Ergebnis (EloModel) / eloratings.net-Init",
+        "type": "COMPUTED", "source": "Elo-Update nach jedem Ergebnis (EloModel) / eloratings.net-Init",
         "update": "Automatisch nach jedem Ergebnis", "before_wm": "eloratings.net",
     },
 }

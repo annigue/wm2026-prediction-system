@@ -1,5 +1,5 @@
 """
-Bayesian Elo-Update nach realem Spielergebnis.
+Elo-Update nach realem Spielergebnis (klassisches Elo, keine Bayes-Inferenz).
 
 Nach jedem Ergebnis:
 1. Neue Elo-Werte berechnen (K=20 während Turnier — konservativ)
@@ -58,13 +58,13 @@ async def apply_result(
         home_feat.elo_rating = new_home_elo
     else:
         db.add(TeamFeature(team_id=home_team_id, snapshot_date=date.today(),
-                           elo_rating=new_home_elo, data_source="bayesian_update"))
+                           elo_rating=new_home_elo, data_source="elo_update"))
 
     if away_feat:
         away_feat.elo_rating = new_away_elo
     else:
         db.add(TeamFeature(team_id=away_team_id, snapshot_date=date.today(),
-                           elo_rating=new_away_elo, data_source="bayesian_update"))
+                           elo_rating=new_away_elo, data_source="elo_update"))
 
     await db.flush()
 
