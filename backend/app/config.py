@@ -69,8 +69,9 @@ class Settings(BaseSettings):
     ad_clamp_lo: float = 0.65    # Clamp gegen Ausreißer
     ad_clamp_hi: float = 1.55
     # Dämpfung des Attack/Defense-Einflusses aufs λ: (Attack·Defense)^ad_gamma.
-    # 0.0 = AUS (identisch zum reinen Elo-Modell) — erst nach bestandener Evaluation > 0 setzen.
-    ad_gamma: float = 0.0
+    # Backtest (9360 Spiele): LogLoss/Brier/ECE minimieren bei ~0.7; konservativ 0.5 aktiviert
+    # (erfasst ~90 % des Gewinns, Elo bleibt dominant). Via AD_GAMMA-Env tunebar; 0.0 = aus.
+    ad_gamma: float = 0.5
 
 
 settings = Settings()

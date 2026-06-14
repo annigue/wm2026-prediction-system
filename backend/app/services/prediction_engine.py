@@ -100,7 +100,14 @@ async def predict_match(match_id: str, db: AsyncSession, model_version: str = "v
     host_home, host_away = _host_bonus(match.stage, match.home_team_id, match.away_team_id)
     eff_home_elo = adj.adjusted_home_elo + host_home
     eff_away_elo = adj.adjusted_away_elo + host_away
-    result = _poisson.predict(eff_home_elo, eff_away_elo)
+
+    # Attack-/Defense-Ratings (≈1.0 neutral) modulieren λ gedämpft (ad_gamma); Elo bleibt dominant.
+    atk_h = (getattr(home_feat, "attack_rating", None) or 1.0)
+    def_h = (getattr(home_feat, "defense_rating", None) or 1.0)
+    atk_a = (getattr(away_feat, "attack_rating", None) or 1.0)
+    def_a = (getattr(away_feat, "defense_rating", None) or 1.0)
+    result = _poisson.predict(eff_home_elo, eff_away_elo,
+                              atk_h, def_h, atk_a, def_a, settings.ad_gamma)
 
     factors = [
         {
@@ -130,6 +137,13 @@ async def predict_match(match_id: str, db: AsyncSession, model_version: str = "v
         "adjusted_elo_away": round(eff_away_elo, 1),
         "factors": factors,
     }
+
+    if settings.ad_gamma > 0:
+        explanation["attack_defense"] = {
+            "gamma": settings.ad_gamma,
+            "home": {"attack": round(atk_h, 3), "defense": round(def_h, 3)},
+            "away": {"attack": round(atk_a, 3), "defense": round(def_a, 3)},
+        }
 
     # Offizielle, markt-kalibrierte Prognose (Variante D + log-Blend).
     # Das reine Modell (result.* / top-level prob_*) bleibt für die Betting Engine unverändert.

@@ -21,16 +21,24 @@ class PoissonModel:
     MAX_GOALS  = 8
     RHO        = -0.13  # Dixon-Coles-Korrelationsparameter
 
-    def compute_lambdas(self, elo_home: float, elo_away: float) -> tuple[float, float]:
-        """Erwartete Tore aus angepassten Elo-Werten.
+    def compute_lambdas(self, elo_home: float, elo_away: float,
+                        atk_home: float = 1.0, def_home: float = 1.0,
+                        atk_away: float = 1.0, def_away: float = 1.0,
+                        gamma: float = 0.0) -> tuple[float, float]:
+        """Erwartete Tore: Elo-Baseline × gedämpfter Attack/Defense-Faktor.
 
-        Die Exponentialfunktion bildet Elo-Differenzen auf Tor-Verhältnisse ab.
-        Bei Elo-Diff=0: beide Teams erzielen BASE_GOALS.
-        Bei Elo-Diff=+200: Heimteam ~1.64, Auswärts ~1.03.
+        Elo (Exponentialfunktion) bleibt der dominante Hebel. Attack/Defense (≈1.0 neutral)
+        modulieren nur gedämpft mit Exponent gamma:
+            λ_home = BASE · exp(+Δ/800) · (Attack_home · Defense_away)^gamma
+            λ_away = BASE · exp(−Δ/800) · (Attack_away · Defense_home)^gamma
+        gamma=0 ⇒ exakt das reine Elo-Modell (keine Verhaltensänderung).
         """
         diff = elo_home - elo_away
         lh = self.BASE_GOALS * np.exp(diff / 800.0)
         la = self.BASE_GOALS * np.exp(-diff / 800.0)
+        if gamma > 0:
+            lh *= (max(atk_home, 0.1) * max(def_away, 0.1)) ** gamma
+            la *= (max(atk_away, 0.1) * max(def_home, 0.1)) ** gamma
         return float(np.clip(lh, 0.25, 5.0)), float(np.clip(la, 0.25, 5.0))
 
     @staticmethod
@@ -61,8 +69,12 @@ class PoissonModel:
             dist = {k: v / total for k, v in dist.items()}
         return dist
 
-    def predict(self, elo_home: float, elo_away: float) -> PredictionResult:
-        lh, la = self.compute_lambdas(elo_home, elo_away)
+    def predict(self, elo_home: float, elo_away: float,
+                atk_home: float = 1.0, def_home: float = 1.0,
+                atk_away: float = 1.0, def_away: float = 1.0,
+                gamma: float = 0.0) -> PredictionResult:
+        lh, la = self.compute_lambdas(elo_home, elo_away,
+                                      atk_home, def_home, atk_away, def_away, gamma)
         dist = self.compute_distribution(lh, la)
 
         p_home = sum(p for k, p in dist.items()
