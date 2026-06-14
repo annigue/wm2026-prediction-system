@@ -206,11 +206,13 @@ def _after_result_tasks(match_id: str):
     from app.services.prediction_engine import predict_all_scheduled
     from app.services.form_engine import update_all_forms
     from app.services.knockout_resolver import resolve_bracket
+    from app.services.attack_defense_service import refresh_ratings
 
     sync_engine = create_engine(settings.database_url_sync)
     SyncSession = sessionmaker(bind=sync_engine)
     with SyncSession() as s:
         update_all_forms(s)
+        refresh_ratings(s)   # Attack/Defense inkl. neuem WM-Ergebnis aktualisieren
         resolve_bracket(s)
         s.commit()
     sync_engine.dispose()

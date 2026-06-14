@@ -37,12 +37,24 @@ def compute_ratings(session) -> dict[str, dict]:
     team_ids = [r[0] for r in session.execute(text("SELECT id FROM teams"))]
     out: dict[str, dict] = {}
     for tid in team_ids:
+        # Historie (martj42) OHNE die finale WM 2026 + UNSERE eigenen WM-Ergebnisse
+        # (frisch synchronisiert) → Ratings reagieren nach jedem WM-Spiel; keine Doppelzählung.
         rows = session.execute(text("""
-            SELECT CASE WHEN home_team_id = :t THEN home_goals ELSE away_goals END AS gf,
-                   CASE WHEN home_team_id = :t THEN away_goals ELSE home_goals END AS ga
-            FROM   international_results
-            WHERE  home_team_id = :t OR away_team_id = :t
-            ORDER  BY match_date DESC
+            SELECT gf, ga FROM (
+                SELECT match_date,
+                       CASE WHEN home_team_id = :t THEN home_goals ELSE away_goals END AS gf,
+                       CASE WHEN home_team_id = :t THEN away_goals ELSE home_goals END AS ga
+                FROM   international_results
+                WHERE  (home_team_id = :t OR away_team_id = :t)
+                  AND  NOT (tournament = 'FIFA World Cup' AND match_date >= '2026-06-01')
+                UNION ALL
+                SELECT m.kickoff_utc::date,
+                       CASE WHEN m.home_team_id = :t THEN mr.home_goals ELSE mr.away_goals END,
+                       CASE WHEN m.home_team_id = :t THEN mr.away_goals ELSE mr.home_goals END
+                FROM   matches m JOIN match_results mr ON mr.match_id = m.id
+                WHERE  m.home_team_id = :t OR m.away_team_id = :t
+            ) x
+            ORDER BY match_date DESC
             LIMIT  :n
         """), {"t": tid, "n": n_win}).all()
 
@@ -66,3 +78,17 @@ def compute_ratings(session) -> dict[str, dict]:
             "n": len(rows),
         }
     return out
+
+
+def refresh_ratings(session) -> int:
+    """Berechnet Attack/Defense neu und schreibt sie in den neuesten team_features-Snapshot.
+    Wird nach jedem Ergebnis aufgerufen (Recompute-Kette) → Ratings bleiben aktuell. Idempotent."""
+    ratings = compute_ratings(session)
+    upd = 0
+    for tid, r in ratings.items():
+        upd += session.execute(text("""
+            UPDATE team_features SET attack_rating = :a, defense_rating = :d
+            WHERE team_id = :t
+              AND snapshot_date = (SELECT max(snapshot_date) FROM team_features WHERE team_id = :t)
+        """), {"a": r["attack"], "d": r["defense"], "t": tid}).rowcount
+    return upd
