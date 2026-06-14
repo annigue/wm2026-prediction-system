@@ -20,7 +20,7 @@ FINISHED = {"FT", "AET", "PEN"}
 # unser home_country (norm) -> API-Football-Teamname (norm), für Abweichungen
 _ALIAS = {
     "united states": "usa", "south korea": "korea republic", "ivory coast": "cote divoire",
-    "czechia": "czech republic", "cape verde": "cabo verde",
+    "czechia": "czech republic", "cape verde": "cabo verde", "turkiye": "turkey",
 }
 
 
