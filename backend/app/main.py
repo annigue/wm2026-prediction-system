@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
 from app.routers import teams, matches, groups, tournament, dashboard, admin, predictions
 from app.models import appstate  # noqa: F401 — vor create_all registrieren (app_state-Tabelle)
+from app.models import results_history  # noqa: F401 — international_results-Tabelle
 
 
 @asynccontextmanager
