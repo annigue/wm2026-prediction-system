@@ -95,8 +95,7 @@ def compute_adaptive_weight(session) -> tuple[float, dict]:
             "weight_used": default_w,
         }
 
-    candidates = [round(w / 100, 2) for w in range(5, 65, 5)]
-    # w=0 (reines Modell) ebenfalls testen
+    candidates = [round(w / 100, 2) for w in range(5, 100, 5)]
     candidates = [0.0] + candidates
 
     brier_by_w = {}
