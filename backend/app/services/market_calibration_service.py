@@ -47,6 +47,80 @@ def compare_match(model_probs: list[float], market_probs: list[float],
     return res
 
 
+def _load_scored_matches(session) -> list[tuple[list[float], list[float], int]]:
+    """Liefert (model_probs, market_probs, outcome_index) für alle gespielten Spiele
+    mit gespeichertem Markt-Snapshot."""
+    from sqlalchemy import text
+
+    rows = session.execute(text("""
+        SELECT p.prob_home_win, p.prob_draw, p.prob_away_win, p.explanation,
+               mr.home_goals, mr.away_goals
+        FROM   matches m
+        JOIN   LATERAL (SELECT prob_home_win, prob_draw, prob_away_win, explanation
+                        FROM match_predictions WHERE match_id = m.id
+                        ORDER BY predicted_at DESC LIMIT 1) p ON true
+        JOIN   match_results mr ON mr.match_id = m.id
+        WHERE  m.home_team_id IS NOT NULL AND m.away_team_id IS NOT NULL
+               AND mr.home_goals IS NOT NULL
+    """)).fetchall()
+
+    result = []
+    for ph, pd, pa, expl, hg, ag in rows:
+        snap = ((expl or {}).get("official", {}) or {}).get("market") or {}
+        f = snap.get("fair_1x2")
+        if not f:
+            continue
+        model_probs = [float(ph), float(pd), float(pa)]
+        market_probs = [f["home"], f["draw"], f["away"]]
+        outcome = 0 if hg > ag else (1 if hg == ag else 2)
+        result.append((model_probs, market_probs, outcome))
+    return result
+
+
+def compute_adaptive_weight(session) -> tuple[float, dict]:
+    """Grid-Search über w ∈ [0.05, 0.60]: findet das Markt-Gewicht mit dem niedrigsten
+    mittleren Brier-Score auf allen gespielten Spielen. Gibt (w_optimal, meta) zurück.
+    Fällt auf settings.odds_blend_weight zurück bei zu wenig Daten."""
+    from app.services.forecast_service import blend_1x2
+
+    matches = _load_scored_matches(session)
+    default_w = settings.odds_blend_weight
+    min_n = settings.adaptive_blend_min_matches
+
+    if len(matches) < min_n:
+        return default_w, {
+            "adaptive": False,
+            "reason": f"Zu wenig gespielte Spiele mit Markt-Snapshot ({len(matches)}/{min_n})",
+            "n_matches": len(matches),
+            "weight_used": default_w,
+        }
+
+    candidates = [round(w / 100, 2) for w in range(5, 65, 5)]
+    # w=0 (reines Modell) ebenfalls testen
+    candidates = [0.0] + candidates
+
+    brier_by_w = {}
+    for w in candidates:
+        total = 0.0
+        for model_p, market_p, outcome in matches:
+            blended = blend_1x2(model_p, market_p, w)
+            total += brier_score(blended, outcome)
+        brier_by_w[w] = round(total / len(matches), 6)
+
+    w_optimal = min(brier_by_w, key=brier_by_w.get)
+
+    return w_optimal, {
+        "adaptive": True,
+        "n_matches": len(matches),
+        "weight_used": w_optimal,
+        "default_weight": default_w,
+        "brier_at_default": brier_by_w.get(default_w),
+        "brier_at_optimal": brier_by_w[w_optimal],
+        "improvement": round((brier_by_w.get(default_w, 0) - brier_by_w[w_optimal]), 6),
+        "brier_curve": {str(w): b for w, b in sorted(brier_by_w.items())},
+    }
+
+
 def build_calibration_report(session) -> dict:
     """Aggregiert Modell vs. Markt vs. geblendet. Nutzt den zum Prognosezeitpunkt
     gespeicherten Markt-SNAPSHOT (explanation.official.market) — für gespielte Spiele
@@ -107,11 +181,14 @@ def build_calibration_report(session) -> dict:
     if scored:
         best = min((("modell", bm), ("markt", bk), ("geblendet", bb)), key=lambda x: x[1])[0]
 
+    adaptive_w, adaptive_meta = compute_adaptive_weight(session)
+
     return {
         "available": True,
         "n_matches": n,
         "n_with_results": len(scored),
         "blend_weight": settings.odds_blend_weight,
+        "adaptive_weight": adaptive_meta,
         "mean_kl_model_market": _mean("kl_model_market"),
         "mean_abs_edge":        _mean("mean_abs_edge"),
         "mean_brier_model":     bm,

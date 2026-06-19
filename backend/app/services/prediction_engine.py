@@ -67,7 +67,8 @@ def _features_snapshot(feat) -> dict | None:
     }
 
 
-async def predict_match(match_id: str, db: AsyncSession, model_version: str = "v1.0") -> dict | None:
+async def predict_match(match_id: str, db: AsyncSession, model_version: str = "v1.0",
+                        blend_w: float | None = None) -> dict | None:
     """Berechnet Prognose für ein Spiel, speichert und gibt dict zurück."""
     q = await db.execute(
         select(Match)
@@ -163,6 +164,7 @@ async def predict_match(match_id: str, db: AsyncSession, model_version: str = "v
         [result.prob_home_win, result.prob_draw, result.prob_away_win],
         result.score_distribution,
         market_probs,
+        w=blend_w,
     )
 
     existing = next((p for p in match.predictions if p.model_version == model_version), None)
@@ -196,8 +198,39 @@ async def predict_match(match_id: str, db: AsyncSession, model_version: str = "v
     }
 
 
+_blend_w_cache: tuple[float, float] | None = None  # (weight, timestamp)
+_BLEND_W_TTL = 1800  # 30 Minuten Cache
+
+
+def _compute_blend_weight() -> float | None:
+    """Berechnet adaptives Markt-Gewicht (sync, gecacht für 30 Min).
+    Gibt None zurück wenn adaptive_blend deaktiviert → forecast_service nutzt Default."""
+    import time
+    global _blend_w_cache
+
+    if not settings.adaptive_blend:
+        return None
+    if _blend_w_cache and time.time() - _blend_w_cache[1] < _BLEND_W_TTL:
+        return _blend_w_cache[0]
+    try:
+        from sqlalchemy import create_engine
+        from sqlalchemy.orm import sessionmaker
+        from app.services.market_calibration_service import compute_adaptive_weight
+        engine = create_engine(settings.database_url_sync)
+        Session = sessionmaker(bind=engine)
+        with Session() as session:
+            w, _meta = compute_adaptive_weight(session)
+        engine.dispose()
+        _blend_w_cache = (w, time.time())
+        return w
+    except Exception:
+        return None
+
+
 async def predict_all_scheduled(db: AsyncSession, model_version: str = "v1.0") -> int:
     """Berechnet Prognosen für alle Spiele mit bekannten Teams (stage-agnostisch)."""
+    blend_w = _compute_blend_weight()
+
     q = await db.execute(
         select(Match.id)
         .where(
@@ -210,7 +243,7 @@ async def predict_all_scheduled(db: AsyncSession, model_version: str = "v1.0") -
     ids = [row[0] for row in q.fetchall()]
     count = 0
     for mid in ids:
-        if await predict_match(mid, db, model_version):
+        if await predict_match(mid, db, model_version, blend_w=blend_w):
             count += 1
     await db.commit()
     return count

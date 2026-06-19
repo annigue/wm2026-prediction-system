@@ -9,8 +9,8 @@ router = APIRouter()
 
 @router.post("/matches/{match_id}/predict")
 async def predict_match_endpoint(match_id: str, db: AsyncSession = Depends(get_db)):
-    from app.services.prediction_engine import predict_match
-    result = await predict_match(match_id, db)
+    from app.services.prediction_engine import predict_match, _compute_blend_weight
+    result = await predict_match(match_id, db, blend_w=_compute_blend_weight())
     if not result:
         raise HTTPException(status_code=404, detail="Spiel nicht gefunden oder Teams unbekannt")
     await db.commit()

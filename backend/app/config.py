@@ -59,6 +59,10 @@ class Settings(BaseSettings):
     # Log-Opinion-Pool-Gewicht des Marktes. Reines Modell bleibt für die Betting
     # Engine erhalten (Edge/EV unverändert); nur die OFFIZIELLE Prognose wird kalibriert.
     odds_blend_weight: float = 0.35
+    # Adaptives Markt-Gewicht: w wird per Grid-Search auf gespielten Spielen optimiert
+    # (niedrigster Brier-Score). Fällt auf odds_blend_weight zurück bei zu wenig Daten.
+    adaptive_blend: bool = True
+    adaptive_blend_min_matches: int = 8
     # Vertrauen-Stufen aus der max-WS der kalibrierten W/U/N
     conf_high: float = 0.55
     conf_mid: float = 0.42
