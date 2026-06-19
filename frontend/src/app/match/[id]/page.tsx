@@ -210,7 +210,7 @@ export default async function MatchPage({ params }: { params: { id: string } }) 
             {mkText && (
               <div className="text-xs text-wm-muted border-t border-wm-border pt-2">
                 Marktvergleich: <span className="text-gray-300">{mkText}</span>
-                <span className="opacity-60"> · Markt einbezogen (w={(mk.weight * 100).toFixed(0)}%)</span>
+                <span className="opacity-60"> · Markt-Gewicht w={(mk.weight * 100).toFixed(0)}% (adaptiv)</span>
               </div>
             )}
           </div>

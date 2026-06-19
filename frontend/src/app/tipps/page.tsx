@@ -57,7 +57,7 @@ export default async function TippsPage() {
         <h1 className="text-2xl font-bold text-white">Tipprunde</h1>
         <p className="text-wm-muted text-sm mt-1">
           Empfohlene Tipps (offizielle Prognose) · {upcoming.length} kommende · {played.length} gespielt ·
-          Modell: Elo + Poisson + Markt-Kalibrierung
+          Modell: Elo + Poisson + adaptive Markt-Kalibrierung
         </p>
       </div>
 
@@ -132,7 +132,7 @@ export default async function TippsPage() {
       <div className="card flex flex-wrap gap-4 text-xs">
         <div className="flex items-center gap-2">
           <span className="font-bold text-white text-base">2:1</span>
-          <span className="text-wm-muted">Offizielle Prognose (markt-kalibriert · wie auf der Spiel-Seite)</span>
+          <span className="text-wm-muted">Offizielle Prognose (adaptiv markt-kalibriert · wie auf der Spiel-Seite)</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-wm-muted">(1:1)</span>

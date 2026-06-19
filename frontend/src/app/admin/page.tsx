@@ -200,9 +200,20 @@ export default function AdminPage() {
         ) : (
           <div className="space-y-2">
             <div className="text-xs text-wm-muted">
-              {cal.n_matches} Spiele mit Markt-Snapshot · {cal.n_with_results} gespielt · Blend-Gewicht
-              {" "}w={Math.round((cal.blend_weight ?? 0) * 100)}%
+              {cal.n_matches} Spiele mit Markt-Snapshot · {cal.n_with_results} gespielt
             </div>
+            {cal.adaptive_weight && (
+              <div className={`text-xs rounded-lg px-3 py-2 ${cal.adaptive_weight.adaptive ? "bg-blue-600/10 border border-blue-600/30" : "bg-white/5"}`}>
+                {cal.adaptive_weight.adaptive ? (
+                  <>
+                    <span className="text-blue-300 font-semibold">Adaptives Gewicht: w={Math.round(cal.adaptive_weight.weight_used * 100)}%</span>
+                    <span className="text-wm-muted"> (Default {Math.round(cal.adaptive_weight.default_weight * 100)}% · optimiert auf {cal.adaptive_weight.n_matches} Spielen · Brier {cal.adaptive_weight.brier_at_optimal?.toFixed(3)} statt {cal.adaptive_weight.brier_at_default?.toFixed(3)})</span>
+                  </>
+                ) : (
+                  <span className="text-wm-muted">Blend-Gewicht w={Math.round((cal.blend_weight ?? 0) * 100)}% (fix · {cal.adaptive_weight.reason})</span>
+                )}
+              </div>
+            )}
 
             {cal.n_with_results > 0 ? (
               <>
