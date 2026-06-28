@@ -210,9 +210,15 @@ def sync_ko_fixtures(session: Session, fixtures: list | None = None) -> dict:
                 "SELECT home_team_id, away_team_id, kickoff_utc FROM matches WHERE id=:id"),
                 {"id": slot_id}).first()
             if cur and (cur[0] != h or cur[1] != a or cur[2] != ko):
+                team_changed = cur[0] != h or cur[1] != a
                 session.execute(text(
                     "UPDATE matches SET home_team_id=:h, away_team_id=:a, kickoff_utc=:k WHERE id=:id"),
                     {"h": h, "a": a, "k": ko, "id": slot_id})
+                # Bei Paarungswechsel die alte Prognose verwerfen — sie gehört zur falschen
+                # Paarung. Lieber kurz KEIN Tipp als ein falscher, bis predict_all neu rechnet.
+                if team_changed:
+                    session.execute(text(
+                        "DELETE FROM match_predictions WHERE match_id=:id"), {"id": slot_id})
                 summary["ko_updated"] += 1
         summary["rounds_filled"].append(stage)
 
