@@ -41,14 +41,15 @@ Antworten als JSON. Admin-Endpunkte erfordern Header `Authorization: <ADMIN_TOKE
 ## Admin (`Authorization`-Header)
 - `GET /admin/status` → Sync-/Rate-Limit-Status (kein API-Call)
 - `POST /admin/sync` → idempotenter Sync (world-cup-2026-live-api)
-- **`POST /admin/auto-update`** → Sync + Elo idempotent für neu beendete Spiele + Recompute
-  (Form/Bracket/Prognosen/Simulation). Von der CI (`sync-results.yml`) alle 30 min aufgerufen.
-  Antwort: `{ synced, elo_newly_applied, recompute: "triggered"|"skip …" }`
+- **`POST /admin/auto-update`** → Sync (inkl. offizieller KO-Paarungen + Termine aus der API) +
+  Elo idempotent für neu beendete Spiele + Recompute (Form/Ratings/Prognosen/Simulation). Von der
+  CI (`sync-results.yml`) alle 30 min aufgerufen.
+  Antwort: `{ synced, elo_newly_applied, ko_updated, recompute: "triggered"|"skip …" }`
 - `POST /admin/simulate` → Monte-Carlo im Hintergrund
 - `GET /admin/simulation-status` → letzter Lauf
 - `POST /admin/predict-all` … (siehe Predictions)
 - `POST /admin/refresh-form` · `POST /admin/refresh-features`
-- `POST /admin/resolve-bracket` → KO-Teilnehmer setzen + neu prognostizieren
+- `POST /admin/resolve-bracket` → offizielle KO-Paarungen + Termine aus der API ziehen + neu prognostizieren
 - `GET /admin/feature-audit` → COMPUTED/PRIOR-Klassifikation je Team
 - `GET /admin/odds-status` → Key-/Fallback-Status, Alter der letzten Quoten, TTL
 - `GET /admin/market-calibration` → Modell vs. Markt (KL, mittl. Edge, Brier)

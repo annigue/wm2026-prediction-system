@@ -58,17 +58,21 @@ async def auto_update(background_tasks: BackgroundTasks,
     from app.models.team import EloRating
     from app.routers.matches import _after_result_tasks
 
-    from app.services.apifootball_service import sync_results
+    from app.services.apifootball_service import sync_results, sync_ko_fixtures
     import traceback as _tb
     try:
-        # 1) Synchronisieren: Spielplan/Status via RapidAPI, ECHTE Ergebnisse via API-Football
+        # 1) Synchronisieren: Spielplan/Status, offizielle KO-Paarungen + Termine aus der API
+        #    (vor den Ergebnissen, damit beendete KO-Spiele ihrem Slot zugeordnet werden),
+        #    dann ECHTE Ergebnisse via API-Football.
         engine = create_engine(settings.database_url_sync)
         Session = sessionmaker(bind=engine)
         with Session() as session:
             sync_summary = sync_all(session)
+            sync_summary["ko"] = sync_ko_fixtures(session)
             sync_summary["apifootball"] = sync_results(session)
             session.commit()
         engine.dispose()
+        ko_changed = sync_summary["ko"].get("ko_updated", 0) > 0
 
         # 2) Beendete Spiele mit Ergebnis, aber ohne Elo-Eintrag → chronologisch Elo nachziehen.
         #    FRISCHE Session: die injizierte `db` wird durch den langen, blockierenden Sync-Block
@@ -94,13 +98,16 @@ async def auto_update(background_tasks: BackgroundTasks,
 
             if applied:
                 await db2.commit()
-                background_tasks.add_task(_after_result_tasks, applied[-1])
+            # Recompute auch, wenn nur die KO-Paarungen neu gesetzt wurden (ohne neues Ergebnis)
+            if applied or ko_changed:
+                background_tasks.add_task(_after_result_tasks, applied[-1] if applied else None)
 
         return {
             "ok": True,
             "synced": sync_summary,
             "elo_newly_applied": len(applied),
-            "recompute": "triggered" if applied else "skip (keine neuen Ergebnisse)",
+            "ko_updated": sync_summary["ko"].get("ko_updated", 0),
+            "recompute": "triggered" if (applied or ko_changed) else "skip (keine Änderungen)",
         }
     except Exception as e:
         # Kein 500 mehr: Fehler diagnose-fähig zurückgeben (erscheint im CI-Log)
@@ -158,15 +165,16 @@ async def odds_status():
 
 @router.post("/resolve-bracket")
 async def resolve_bracket_endpoint(authorization: str = Header(...)):
+    """KO-Paarungen + Termine aus der offiziellen API ziehen (keine Selbst-Berechnung)."""
     _check_token(authorization)
-    from app.services.knockout_resolver import resolve_bracket
+    from app.services.apifootball_service import sync_ko_fixtures
     engine = create_engine(settings.database_url_sync)
     Session = sessionmaker(bind=engine)
     with Session() as session:
-        result = resolve_bracket(session)
+        result = sync_ko_fixtures(session)
         session.commit()
     engine.dispose()
-    if result.get("filled"):
+    if result.get("ko_updated"):
         async with AsyncSessionLocal() as db:
             from app.services.prediction_engine import predict_all_scheduled
             result["predictions_recomputed"] = await predict_all_scheduled(db)

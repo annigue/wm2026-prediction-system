@@ -200,22 +200,22 @@ async def record_result(
     }
 
 
-def _after_result_tasks(match_id: str):
-    """Hintergrund: Form → KO-Bracket → Prognosen → Cache → Simulation."""
+def _after_result_tasks(match_id: str | None = None):
+    """Hintergrund: Form → Ratings → KO-Paarungen (aus API) → Prognosen → Cache → Simulation."""
     import asyncio
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
     from app.services.prediction_engine import predict_all_scheduled
     from app.services.form_engine import update_all_forms
-    from app.services.knockout_resolver import resolve_bracket
+    from app.services.apifootball_service import sync_ko_fixtures
     from app.services.attack_defense_service import refresh_ratings
 
     sync_engine = create_engine(settings.database_url_sync)
     SyncSession = sessionmaker(bind=sync_engine)
     with SyncSession() as s:
         update_all_forms(s)
-        refresh_ratings(s)   # Attack/Defense inkl. neuem WM-Ergebnis aktualisieren
-        resolve_bracket(s)
+        refresh_ratings(s)       # Attack/Defense inkl. neuem WM-Ergebnis aktualisieren
+        sync_ko_fixtures(s)      # offizielle KO-Paarungen/Termine aus der API (keine Selbst-Berechnung)
         s.commit()
     sync_engine.dispose()
 
